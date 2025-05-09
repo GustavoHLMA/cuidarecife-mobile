@@ -1,110 +1,150 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import Header from '@/components/Header';
+import { useRef } from 'react';
+import {
+  Alert,
+  Animated,
+  Linking,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+export default function ExploreScreen() {
+  const scrollY = useRef(new Animated.Value(0)).current;
 
-export default function TabTwoScreen() {
+  const handlePress = (link?: string) => {
+    if (link) {
+      Linking.openURL(link).catch((err) => console.error('Erro ao abrir link:', err));
+    } else {
+      Alert.alert('Funcionalidade ainda não implementada.');
+    }
+  };
+
+  const Button = ({ title }: { title: string }) => (
+    <TouchableOpacity
+      style={styles.button}
+      onPress={() => handlePress()}
+    >
+      <Text style={styles.buttonText}>{title}</Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <SafeAreaView style={styles.container}>
+      <Header scrollY={scrollY} onReadPress={() => {}} />
+
+      <ScrollView
+        contentContainerStyle={styles.contentContainer}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+      >
+        <Text style={styles.countdownText}>FALTAM 25 DIAS</Text>
+        <Text style={styles.subText}>PARA SUA CONSULTA</Text>
+
+        <View style={styles.separator} />
+
+        <Text style={styles.greetingText}>Olá Hosana, o que deseja fazer hoje?</Text>
+
+        <View style={styles.buttonRow}>
+          <Button title="CADASTRO" />
+          <Button title="PRESCRIÇÃO" />
+        </View>
+        <View style={styles.buttonRow}>
+          <Button title="PRESSÃO" />
+          <Button title="GLICEMIA" />
+        </View>
+        <View style={styles.singleButtonRow}>
+          <Button title="AJUDA" />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
   },
-  titleContainer: {
+  contentContainer: {
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    paddingTop: 100, // 🔧 antes 120 - afasta do Header para mostrar contagem
+    flexGrow: 1,
+    paddingBottom: 100, // já resolvia o scroll
+  },
+  countdownText: {
+    fontSize: 40,
+    color: '#2196F3',
+    fontWeight: 'bold',
+    marginTop: 130, // 🔧 antes 50 - menos espaço acima
+    zIndex: 10,
+    textAlign: 'center',
+  },
+  subText: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#003164',
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  separator: {
+    borderBottomColor: '#000000',
+    borderBottomWidth: 1,
+    opacity: 0.26,
+    width: '100%',
+    marginVertical: 30,
+  },
+  greetingText: {
+    fontSize: 26,
+    color: '#004894',
+    marginBottom: 20,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  buttonRow: {
     flexDirection: 'row',
-    gap: 8,
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 12, // 🔧 antes 20 — menos espaço entre linhas
+    gap: 12, // opcional — espaço entre os botões (RN 0.71+)
+  },
+  singleButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
+    marginBottom: 20,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'center', // 🔧 Centraliza os botões
+    gap: 20, // 🔧 Espaço entre os botões (React Native 0.71+)
+    width: '100%',
+    marginBottom: 12,
+  },
+  button: {
+    backgroundColor: '#82BDFB',
+    width: 170, // 🔧 Largura reduzida para facilitar centralização
+    height: 170,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  buttonText: {
+    color: '#074173',
+    fontSize: 25,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
