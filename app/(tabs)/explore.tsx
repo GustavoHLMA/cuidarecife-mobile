@@ -1,4 +1,5 @@
 import Header from '@/components/Header';
+import { useRouter } from 'expo-router'; // Importando o hook useRouter para navegação
 import { useRef } from 'react';
 import {
   Alert,
@@ -14,6 +15,7 @@ import {
 
 export default function ExploreScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
+  const router = useRouter(); // Inicializando o hook do router
 
   const handlePress = (link?: string) => {
     if (link) {
@@ -23,10 +25,10 @@ export default function ExploreScreen() {
     }
   };
 
-  const Button = ({ title }: { title: string }) => (
+  const Button = ({ title, onPress }: { title: string, onPress: () => void }) => (
     <TouchableOpacity
       style={styles.button}
-      onPress={() => handlePress()}
+      onPress={onPress} // Alterando para o onPress passar a navegação
     >
       <Text style={styles.buttonText}>{title}</Text>
     </TouchableOpacity>
@@ -44,23 +46,26 @@ export default function ExploreScreen() {
         )}
         scrollEventThrottle={16}
       >
+        {/* Contagem regressiva */}
         <Text style={styles.countdownText}>FALTAM 25 DIAS</Text>
         <Text style={styles.subText}>PARA SUA CONSULTA</Text>
 
         <View style={styles.separator} />
 
+        {/* Olá Hosana em negrito */}
         <Text style={styles.greetingText}>Olá Hosana, o que deseja fazer hoje?</Text>
 
+        {/* Botões */}
         <View style={styles.buttonRow}>
-          <Button title="CADASTRO" />
-          <Button title="PRESCRIÇÃO" />
+          <Button title="CADASTRO" onPress={() => handlePress()} />
+          <Button title="PRESCRIÇÃO" onPress={() => router.push('/prescricao')} /> {/* Navegação para a tela Prescrição */}
         </View>
         <View style={styles.buttonRow}>
-          <Button title="PRESSÃO" />
-          <Button title="GLICEMIA" />
+          <Button title="PRESSÃO" onPress={() => handlePress()} />
+          <Button title="GLICEMIA" onPress={() => handlePress()} />
         </View>
         <View style={styles.singleButtonRow}>
-          <Button title="AJUDA" />
+          <Button title="AJUDA" onPress={() => handlePress()} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -75,15 +80,15 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 20,
     alignItems: 'center',
-    paddingTop: 100, // 🔧 antes 120 - afasta do Header para mostrar contagem
+    paddingTop: 100, // Afastando do Header para mostrar contagem
     flexGrow: 1,
-    paddingBottom: 100, // já resolvia o scroll
+    paddingBottom: 100, // Garantindo que o scroll vai até o final
   },
   countdownText: {
     fontSize: 40,
     color: '#2196F3',
     fontWeight: 'bold',
-    marginTop: 130, // 🔧 antes 50 - menos espaço acima
+    marginTop: 150, // Menos espaço acima
     zIndex: 10,
     textAlign: 'center',
   },
@@ -106,32 +111,25 @@ const styles = StyleSheet.create({
     color: '#004894',
     marginBottom: 20,
     textAlign: 'center',
-    fontWeight: 'bold',
+    fontWeight: 'bold', // Texto em negrito
   },
   buttonRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 12, // 🔧 antes 20 — menos espaço entre linhas
-    gap: 12, // opcional — espaço entre os botões (RN 0.71+)
-  },
-  singleButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    width: '100%',
-    marginBottom: 20,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'center', // 🔧 Centraliza os botões
-    gap: 20, // 🔧 Espaço entre os botões (React Native 0.71+)
+    justifyContent: 'center', // Centraliza os botões
+    gap: 20, // Espaço entre os botões
     width: '100%',
     marginBottom: 12,
   },
+  singleButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'center', // Centraliza o botão de AJUDA
+    width: '100%',
+    marginBottom: 20,
+  },
   button: {
     backgroundColor: '#82BDFB',
-    width: 170, // 🔧 Largura reduzida para facilitar centralização
-    height: 170,
+    width: 160, // Ajustado para um tamanho mais proporcional
+    height: 160,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
@@ -143,7 +141,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#074173',
-    fontSize: 25,
+    fontSize: 22, // Ajustado para tamanho mais confortável
     fontWeight: '600',
     textAlign: 'center',
   },
