@@ -61,7 +61,7 @@ Gustavo Henrique Lima Mendes de Almeida<br/>
 
 - [Figma](https://www.figma.com/design/Ey3L81KZqbQ5rCkeKNERm6/Hacker-cidad%C3%A3o-13?node-id=1-2&t=Txk0XatsX8RCfwUZ-1)
 - [Pitch](https://docs.google.com/presentation/d/17AeBh5xvDqSzQEvCWxJrsqBund2Ve4HAdA_-4IjzvaQ/edit?usp=sharing)
-- [Vídeo de Demo](https://youtube.com/demo/cuida-recife)
+- [Vídeo de Demo](https://www.youtube.com/shorts/-QtdGbXSgH8)
 
 ## Instalação ⬇️
 
