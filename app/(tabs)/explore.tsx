@@ -1,5 +1,5 @@
-import Header from '@/components/Header';
-import { useRouter } from 'expo-router'; // Importando o hook useRouter para navegação
+import Header from '@/components/Header'; // Importe o seu componente Header
+import { useRouter } from 'expo-router'; // Inicializando o hook useRouter para navegação
 import { useRef } from 'react';
 import {
   Alert,
@@ -61,8 +61,8 @@ export default function ExploreScreen() {
           <Button title="PRESCRIÇÃO" onPress={() => router.push('/prescricao')} /> {/* Navegação para a tela Prescrição */}
         </View>
         <View style={styles.buttonRow}>
-          <Button title="PRESSÃO" onPress={() => handlePress()} />
-          <Button title="GLICEMIA" onPress={() => handlePress()} />
+          <Button title="PRESSÃO" onPress={() => router.push('/pressao')} /> {/* Navegação para a tela Pressão */}
+          <Button title="GLICEMIA" onPress={() => router.push('/glicemia')} /> {/* Navegação para a tela Glicemia */}
         </View>
         <View style={styles.singleButtonRow}>
           <Button title="AJUDA" onPress={() => handlePress()} />
