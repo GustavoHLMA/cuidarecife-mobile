@@ -1,7 +1,8 @@
-import Header from '@/components/Header'; // Importe o seu componente Header
-import { useRouter } from 'expo-router'; // Inicializando o hook useRouter para navegação
-import { useRef } from 'react';
-import { Image } from 'expo-image'; // Importe o Image do expo-image
+import Header from '@/components/Header';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import * as Speech from 'expo-speech'; // ADICIONADO
+import { useEffect, useRef, useState } from 'react'; // ADICIONADO useState, useEffect
 import {
   Alert,
   Animated,
@@ -16,7 +17,8 @@ import {
 
 export default function ExploreScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
-  const router = useRouter(); // Inicializando o hook do router
+  const router = useRouter();
+  const [isSpeaking, setIsSpeaking] = useState(false); // ADICIONADO
 
   const handlePress = (link?: string) => {
     if (link) {
@@ -36,9 +38,42 @@ export default function ExploreScreen() {
     </TouchableOpacity>
   );
 
+  const speakExploreScreenContent = async () => { // ADICIONADA FUNÇÃO
+    if (isSpeaking) {
+      Speech.stop();
+      return;
+    }
+
+    // Conteúdo específico da tela Explore
+    // Você pode tornar isso mais dinâmico buscando os textos dos componentes se necessário
+    let contentToSpeak = "Tela Explorar. ";
+    contentToSpeak += "FALTAM 25 DIAS PARA SUA CONSULTA. "; // Exemplo, idealmente viria de uma variável
+    contentToSpeak += `Olá Hosana, o que deseja fazer hoje? `; // Assumindo que 'user' está acessível ou você pode definir um nome padrão
+    contentToSpeak += "Opções disponíveis: CADASTRO, PRESCRIÇÃO, GLICEMIA, PRESSÃO, AJUDA. ";
+
+    Speech.speak(contentToSpeak, {
+      language: 'pt-BR',
+      onStart: () => setIsSpeaking(true),
+      onDone: () => setIsSpeaking(false),
+      onStopped: () => setIsSpeaking(false),
+      onError: (error) => {
+        console.error('Erro ao reproduzir fala na tela Explore:', error);
+        setIsSpeaking(false);
+        Alert.alert("Erro na Leitura", "Não foi possível ler o conteúdo da tela.");
+      },
+    });
+  };
+
+  useEffect(() => { // ADICIONADO useEffect para cleanup
+    return () => {
+      Speech.stop();
+      setIsSpeaking(false);
+    };
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
-      <Header scrollY={scrollY} onReadPress={() => {}} />
+      <Header scrollY={scrollY} onReadPress={speakExploreScreenContent} /> {/* MODIFICADO */}
 
       <ScrollView
         contentContainerStyle={styles.contentContainer}

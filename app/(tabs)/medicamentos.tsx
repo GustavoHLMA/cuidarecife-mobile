@@ -1,7 +1,8 @@
 import Header from '@/components/Header'; // Seu componente Header existente
-import { useNavigation, NavigationProp } from '@react-navigation/native'; // << AJUSTADO: Import para navegação e tipagem
+import { NavigationProp, useNavigation } from '@react-navigation/native'; // << AJUSTADO: Import para navegação e tipagem
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import * as Speech from 'expo-speech'; // << ADDED: Import Expo Speech
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -51,8 +52,9 @@ export default function MedicamentosScreen() {
       return timeA - timeB;
     })
   );
+  const [isSpeaking, setIsSpeaking] = useState(false); // << ADDED: State for speech status
 
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // << AJUSTADO: Tipagem para useNavigation
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const headerMaxHeight = 200;
   const profileImageOverflowHeight = 70;
@@ -67,6 +69,11 @@ export default function MedicamentosScreen() {
         }
       }
     })();
+    // Clean up speech when the component unmounts
+    return () => {
+      Speech.stop();
+      setIsSpeaking(false);
+    };
   }, []);
 
   const getTimeOfDay = (time: string) => {
@@ -195,6 +202,52 @@ export default function MedicamentosScreen() {
     }
   };
 
+  const speakScreenContent = async () => {
+    if (isSpeaking) {
+      Speech.stop();
+      return;
+    }
+
+    let contentToSpeak = `Olá ${user.name}, `;
+    let medicationsFoundForSpeech = false;
+
+    if (medicationsList.length === 0) {
+      contentToSpeak += "você já tomou todos os seus medicamentos por hoje!";
+    } else {
+      contentToSpeak += "esses são seus remédios do dia. ";
+      const periods = ['MANHÃ', 'TARDE', 'NOITE'];
+      periods.forEach(period => {
+        const periodMedications = medicationsList.filter(med => getTimeOfDay(med.time) === period);
+        if (periodMedications.length > 0) {
+          medicationsFoundForSpeech = true;
+          contentToSpeak += `Período da ${period.toLowerCase()}. `;
+          periodMedications.forEach(med => {
+            contentToSpeak += `${med.name} ${med.dosage}, horário ${med.time}. `;
+            if (med.instruction) {
+              contentToSpeak += `Instrução: ${med.instruction}. `;
+            }
+          });
+        }
+      });
+
+      if (!medicationsFoundForSpeech && medicationsList.length > 0) {
+        contentToSpeak = `Olá ${user.name}. Parece que não há medicamentos pendentes para os períodos de hoje ou já foram registrados.`;
+      }
+    }
+
+    Speech.speak(contentToSpeak, {
+      language: 'pt-BR',
+      onStart: () => setIsSpeaking(true),
+      onDone: () => setIsSpeaking(false),
+      onStopped: () => setIsSpeaking(false),
+      onError: (error) => {
+        console.error('Erro ao reproduzir fala:', error);
+        setIsSpeaking(false);
+        Alert.alert("Erro na Leitura", "Não foi possível ler o conteúdo da tela.");
+      },
+    });
+  };
+
   const renderMedicationCard = (medication: typeof initialMedicationsData[0]) => {
     const isFirstCardInList = medicationsList.length > 0 && medicationsList[0].id === medication.id;
     const cardBackgroundColor = isFirstCardInList ? '#2196F3' : '#82BDFB';
@@ -259,7 +312,7 @@ export default function MedicamentosScreen() {
 
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
-      <Header scrollY={scrollY} onReadPress={() => console.log('Read more pressed (Header)')} />
+      <Header scrollY={scrollY} onReadPress={speakScreenContent} /> {/* << MODIFIED: Pass speakScreenContent */}
       <Animated.ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingTop: initialContentPaddingTop }}
