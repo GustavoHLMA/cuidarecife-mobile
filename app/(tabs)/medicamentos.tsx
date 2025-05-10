@@ -1,5 +1,5 @@
 import Header from '@/components/Header'; // Seu componente Header existente
-import { useNavigation } from '@react-navigation/native'; // << NOVO: Import para navegação
+import { useNavigation, NavigationProp } from '@react-navigation/native'; // << AJUSTADO: Import para navegação e tipagem
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from 'react';
@@ -8,6 +8,9 @@ import { Alert, Animated, Platform, SafeAreaView, StyleSheet, Text, TouchableOpa
 // Ícones (SVG já importados no seu código original)
 const placeholderMedicationIcon = require('@/assets/images/pilula.svg');
 const cameraIcon = require('@/assets/images/camera.svg');
+const solIcon = require('@/assets/images/sol.svg'); // NOVO
+const luaIcon = require('@/assets/images/lua.svg'); // NOVO
+const relogioIcon = require('@/assets/images/relogio.svg'); // NOVO
 
 // Dados iniciais dos medicamentos conforme sua lista
 const initialMedicationsData = [
@@ -23,17 +26,19 @@ const user = {
   name: 'Hosana',
 };
 
-// Componente para o ícone de Sol
+type RootStackParamList = {
+  farmacias: { medicationName?: string };
+};
+
 const SunIcon = () => (
   <View style={styles.periodIconView}>
-    <Text style={[styles.periodEmojiIcon, { color: '#FFCD00' }]}>☀️</Text>
+    <ExpoImage source={solIcon} style={styles.svgIcon} contentFit="contain" />
   </View>
 );
 
-// Componente para o ícone de Lua
 const MoonIcon = () => (
   <View style={styles.periodIconView}>
-    <Text style={[styles.periodEmojiIcon, { color: '#FFFFFF' }]}>🌙</Text>
+    <ExpoImage source={luaIcon} style={styles.svgIconLua} contentFit="contain" />
   </View>
 );
 
@@ -47,7 +52,7 @@ export default function MedicamentosScreen() {
     })
   );
 
-  const navigation = useNavigation(); // << NOVO: Hook de navegação
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // << AJUSTADO: Tipagem para useNavigation
 
   const headerMaxHeight = 200;
   const profileImageOverflowHeight = 70;
@@ -67,7 +72,6 @@ export default function MedicamentosScreen() {
   const getTimeOfDay = (time: string) => {
     const hour = parseInt(time.split(':')[0]);
     if (hour < 12) return 'MANHÃ';
-    if (hour < 18) return 'TARDE';
     return 'NOITE';
   };
 
@@ -76,14 +80,12 @@ export default function MedicamentosScreen() {
   };
 
   const handleOutOfStock = (medicationName: string) => {
-    // Alert.alert('Farmácias', `Redirecionando para encontrar farmácias próximas para ${medicationName}.`);
     navigation.navigate('farmacias', { medicationName }); // << AJUSTADO: Navegação real
   };
 
-  // Função processImageForOCR e handleCameraPress mantidas como antes (sem alterações nesta rodada)
   const processImageForOCR = async (uri: string) => {
     console.log('Imagem para processar via API do backend:', uri);
-    const API_BASE_URL = 'http://192.168.0.155:3001';
+    const API_BASE_URL = 'https://cuidarecife-api.onrender.com';
     const BACKEND_API_URL = `${API_BASE_URL}/vision/analyze-image`;
 
     try {
@@ -160,7 +162,7 @@ export default function MedicamentosScreen() {
         try {
           const errorResult = JSON.parse(responseText);
           errorDetails = errorResult.message || responseText;
-        } catch (e) {
+        } catch {
           errorDetails = responseText.substring(0, 200) + (responseText.length > 200 ? "..." : "");
         }
         Alert.alert('OCR Falhou', errorDetails);
@@ -192,7 +194,6 @@ export default function MedicamentosScreen() {
       await processImageForOCR(imageUri);
     }
   };
-
 
   const renderMedicationCard = (medication: typeof initialMedicationsData[0]) => {
     const isFirstCardInList = medicationsList.length > 0 && medicationsList[0].id === medication.id;
@@ -232,7 +233,9 @@ export default function MedicamentosScreen() {
                   borderColor: pillBorderColor,
                 }
               ]}
-            />
+            >
+              <View style={[styles.pillDivider, { backgroundColor: pillIndex < 3 ? '#DAA520' : '#C0C0C0' }]} /> 
+            </View>
           ))}
         </View>
 
@@ -253,7 +256,6 @@ export default function MedicamentosScreen() {
       </View>
     );
   };
-
 
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
@@ -292,7 +294,7 @@ export default function MedicamentosScreen() {
                   // Container para Horário + Card
                   <View key={med.id} style={styles.medicationItemContainer}>
                     <View style={styles.timeAboveCardContainer}>
-                      <Text style={styles.clockIconStyle}>⏰</Text>
+                      <ExpoImage source={relogioIcon} style={styles.clockIconStyle} contentFit="contain" />
                       <Text style={styles.timeAboveCardText}>{med.time}</Text>
                     </View>
                     {renderMedicationCard(med)}
@@ -323,7 +325,6 @@ const styles = StyleSheet.create({
   customHeaderContent: {
     alignItems: 'center',
     marginBottom: 25,
-    marginTop: 25,
   },
   greetingText: {
     fontSize: 24,
@@ -355,7 +356,7 @@ const styles = StyleSheet.create({
     tintColor: '#004894',
   },
   newCameraButtonText: {
-    fontSize: 24, // << AUMENTADO
+    fontSize: 22, // << AUMENTADO
     color: '#004894',
     fontWeight: 'bold',
     textAlign: 'center',
@@ -383,31 +384,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  periodEmojiIcon: {
-    fontSize: 20,
+  svgIcon: { // NOVO estilo para os SVGs sol e lua
+    width: 26,
+    height: 26,
+    tintColor: '#FFCD00', // Cor amarela para o sol, pode ajustar para a lua se necessário
+  },
+  svgIconLua: { // NOVO estilo para o SVG da lua
+    width: 26,
+    height: 26,
   },
   periodTitle: {
     fontSize: 26,
     fontWeight: 'bold',
     color: '#074173',
   },
-  // NOVO: Container para cada entrada de medicamento (horário + card)
   medicationItemContainer: {
     marginBottom: 20, // Espaço entre um conjunto (horário+card) e o próximo
     alignItems: 'center', // Centraliza o card abaixo do horário
   },
-  // NOVO: Estilos para o horário acima do card
   timeAboveCardContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8, 
-    marginRight: -250,
-    // Espaço entre o horário e o card
-    // Se quiser que ocupe a largura do card, adicione width ou alignSelf: 'stretch' e ajuste
+    marginRight: -250, // Mantido, mas pode precisar de ajuste dependendo do tamanho do ícone SVG
   },
-  clockIconStyle: {
-    fontSize: 30,
-    color: '#074173', // Cor escura para o relógio
+  clockIconStyle: { // Ajustado para ExpoImage
+    width: 30, // Definir tamanho para o SVG
+    height: 30,
+    tintColor: '#074173', // Cor escura para o relógio
     marginRight: 8,
   },
   timeAboveCardText: {
@@ -417,7 +421,6 @@ const styles = StyleSheet.create({
   },
   medicationCard: {
     borderRadius: 12,
-    // marginBottom removido daqui, pois medicationItemContainer já tem
     paddingVertical: 15, // Ajustado padding
     paddingHorizontal: 15,
     shadowColor: '#000',
@@ -428,19 +431,16 @@ const styles = StyleSheet.create({
     width: '100%', // O card ocupa a largura disponível no seu container
     maxWidth: 400, // Limite para não ficar excessivamente largo em tablets
   },
-  // NOVO: Linha para ícone do remédio e textos
   cardContentRow: {
     flexDirection: 'row',
     alignItems: 'center', // Alinha o ícone com o bloco de texto
     marginBottom: 10,
   },
-  // NOVO: Ícone do remédio à esquerda dentro do card
   cardMedicationIconLeft: {
     width: 48, // Tamanho do ícone
     height: 48,
     marginRight: 12, // Espaço para o texto
   },
-  // NOVO: Container para os textos ao lado do ícone
   cardTextContainer: {
     flex: 1, // Permite que o texto ocupe o espaço restante
   },
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   medicationInstruction: {
-    fontSize: 27, // Ligeiramente menor
+    fontSize: 22, // Ligeiramente menor
     fontWeight: 'bold',
     marginTop: 4,
     marginBottom: 8,
@@ -474,9 +474,17 @@ const styles = StyleSheet.create({
   pillVisual: {
     width: 24, // Ajustado
     height: 24, // Ajustado
-    borderRadius: 9,
+    borderRadius: 99, // Mantido para forma de pílula mais arredondada
     marginHorizontal: 3,
     borderWidth: 1.5,
+    overflow: 'hidden', // Importante para a linha não sair da pílula
+    justifyContent: 'center', // Para centralizar a linha se ela for menor
+    alignItems: 'center',
+  },
+  pillDivider: { // NOVO estilo para a linha da pílula
+    width: '120%', // Faz a linha ser maior que a pílula para dar efeito de corte diagonal
+    height: 2, // Espessura da linha
+    transform: [{ rotate: '45deg' }],
   },
   actionButtonsContainer: {
     flexDirection: 'row',
@@ -503,7 +511,6 @@ const styles = StyleSheet.create({
   },
   acabouButton: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
     borderColor: '#004894',
   },
   acabouButtonText: {

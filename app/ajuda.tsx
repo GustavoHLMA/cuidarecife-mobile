@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import MarkdownDisplay from 'react-native-markdown-display'; 
 
-const API_URL = 'http://192.168.0.155:3001/chat'; // <<< IMPORTANT: Configure this
+const API_URL = 'https://cuidarecife-api.onrender.com/chat'; // <<< IMPORTANT: Configure this
 
 interface Message {
   id: string;

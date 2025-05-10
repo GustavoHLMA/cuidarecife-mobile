@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#82BDFB', // Cor de fundo ajustada
-    paddingTop: 40,
+    paddingTop: 40, // Mantido para o header
     paddingHorizontal: 16,
   },
   header: {
@@ -95,59 +95,67 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     position: 'absolute',
-    top: 0,
-    width: '100%',
+    top: 0, // Ancorado no topo
+    left: 0, // Ancorado na esquerda
+    right: 0, // Ancorado na direita para ocupar toda a largura
     zIndex: 10,
-    paddingHorizontal: 16,
-    paddingTop: 40,
+    paddingHorizontal: 16, // Padding horizontal para o conteúdo do header
+    paddingTop: 40, // Padding superior para o conteúdo do header
+    // backgroundColor: 'rgba(130, 189, 251, 0.8)', // Opcional: para ver a área do header
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    width: 150,
-    height: 60,
+    width: 150, // Mantido
+    height: 60, // Mantido
     borderRadius: 30,
     paddingVertical: 14,
-    paddingHorizontal: 20,
-    justifyContent: 'center', // Alinha o texto e ícone no centro
+    paddingHorizontal: 20, // Ajustado para centralizar melhor com a fonte menor
+    justifyContent: 'center',
   },
   backText: {
     color: '#004894',
     fontWeight: '600',
     marginLeft: 8,
-    fontSize: 26,
+    fontSize: 22, // Reduzido
   },
   title: {
     color: '#004894',
     fontSize: 30,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginVertical: 20,
+    marginTop: 20, // Mantido de marginVertical
+    marginBottom: 30, // Aumentado para mais espaço
   },
   documentButton: {
     backgroundColor: '#FFCB00',
-    paddingVertical: 12,
-    marginBottom: 20, // Espacamento ajustado
-    borderRadius: 30, // Arredondando mais os botões
+    paddingVertical: 15, // Aumentado um pouco para mais destaque
+    marginBottom: 15, // Ajustado
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
+    marginHorizontal: '5%', // Adicionado para não colar nas bordas
+    width: '90%', // Para garantir que o marginHorizontal funcione como esperado
+    alignSelf: 'center',
   },
   buttonText: {
     color: '#002867',
     fontWeight: 'bold',
-    fontSize: 18,
-    textAlign: 'center', // Centralizando o texto
+    fontSize: 17, // Levemente reduzido para caber melhor com padding
+    textAlign: 'center',
   },
   scrollView: {
-    paddingBottom: 20, // Garantindo que a área inferior tenha espaçamento para o conteúdo
-    paddingTop: 100, // Ajustando o top para dar espaço
+    paddingBottom: 20,
+    paddingTop: 100, // Mantido para compensar o header fixo/animado
+    // paddingHorizontal: 5, // Removido, o container já tem paddingHorizontal: 16
   },
   card: {
-    backgroundColor: '#074173', // Cor do card ajustada
+    backgroundColor: '#074173',
     marginBottom: 30,
-    height: 370,
-    width: 420,
+    // height: 370, // Altura pode ser dinâmica ou minHeight
+    minHeight: 370, // Usar minHeight para garantir espaço mínimo
+    width: '100%', // Para ocupar a largura do container (respeitando o padding do container)
     borderRadius: 10,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -155,41 +163,43 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
+    alignSelf: 'center', // Garante que o card se centralize se o width for menor que o pai
   },
   image: {
-    width: 300, // Diminuindo o tamanho da imagem
-    height: 200,  // Ajustando a altura da imagem
+    width: '90%', // Relativo ao card
+    height: 200,
     marginTop: 20,
-    marginLeft: 40,
+    alignSelf: 'center', // Centraliza a imagem
+    // marginLeft: 40, // Removido
   },
   cardContent: {
-    padding: 10,
+    padding: 15, // Padding geral para o conteúdo textual
   },
   cardTitle: {
-    fontSize: 30,
-    marginLeft: 10,
+    fontSize: 28, // Levemente ajustado
+    // marginLeft: 10, // Removido, padding do cardContent cuida disso
     fontWeight: 'bold',
-    color: '#fff', // Cor do texto ajustada
-    textAlign: 'left', // Alinhando à esquerda
-    marginVertical: 5,
+    color: '#fff',
+    textAlign: 'left',
+    marginBottom: 5, // Ajustado de marginVertical
   },
   cardAddress: {
-    fontSize: 27,
-    marginLeft: 10,
-    color: '#fff', // Cor do texto ajustada
-    textAlign: 'left', // Alinhando à esquerda
+    fontSize: 25, // Levemente ajustado
+    // marginLeft: 10, // Removido
+    color: '#fff',
+    textAlign: 'left',
     marginBottom: 10,
   },
   callButton: {
     backgroundColor: '#FFCB00',
     paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 15, // Ajustado
     borderRadius: 40,
-    marginBottom: 5,
-    marginRight: 25,
+    // marginBottom: 5, // Posição absoluta não precisa de margin bottom assim
+    // marginRight: 25, // Posição absoluta não precisa de margin right assim
     position: 'absolute',
-    bottom: 10,
-    right: 10,
+    bottom: 15, // Ajustado para mais respiro
+    right: 15,  // Ajustado para mais respiro
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
@@ -199,9 +209,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   callButtonText: {
-    color: '#074173', // Cor do texto ajustada
+    color: '#074173',
     fontWeight: 'bold',
-    fontSize: 27,
-    marginLeft: 10, // Ajuste para o espaço entre o ícone e o texto
+    fontSize: 22, // Reduzido
+    marginLeft: 10,
   },
 });
