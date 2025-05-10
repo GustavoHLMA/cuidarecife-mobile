@@ -78,7 +78,7 @@ export default function MedicamentosScreen() {
 
   const getTimeOfDay = (time: string) => {
     const hour = parseInt(time.split(':')[0]);
-    if (hour < 12) return 'MANHÃ';
+    if (hour < 17) return 'MANHÃ';
     return 'NOITE';
   };
 
@@ -155,9 +155,9 @@ export default function MedicamentosScreen() {
           }
 
           if (foundMedication) {
-            Alert.alert('Medicamento Encontrado!', `O texto "${foundMedication.name}" parece corresponder a um dos seus remédios.`);
+            Alert.alert('Medicamento Encontrado!', `O texto enviado parece corresponder a um dos seus remédios.`);
           } else {
-            Alert.alert('Atenção!', `O texto extraído "${normalizedExtractedText}" não corresponde aos seus medicamentos listados. Verifique com cuidado.`);
+            Alert.alert('Atenção!', `O texto extraído não corresponde aos seus medicamentos listados. Verifique com cuidado.`);
           }
         } else {
           console.log('Backend API response OK, mas sem extractedText:', result);

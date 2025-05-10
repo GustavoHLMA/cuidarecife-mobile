@@ -94,15 +94,15 @@ export default function ExploreScreen() {
 
         {/* Botões */}
         <View style={styles.buttonRow}>
-          <Button title="CADASTRO" onPress={() => handlePress()} />
-          <Button title="PRESCRIÇÃO" onPress={() => router.push('/prescricao')} /> {/* Navegação para a tela Prescrição */}
+          <Button title="CADASTRO" onPress={() => handlePress()} imageSource={(require('@/assets/images/cadastro.png'))} />
+          <Button title="PRESCRIÇÃO" onPress={() => router.push('/prescricao')} imageSource={(require('@/assets/images/presc.png'))} /> {/* Navegação para a tela Prescrição */}
         </View>
         <View style={styles.buttonRow}>
-          <Button title="PRESSÃO" onPress={() => router.push('/pressao')} /> {/* Navegação para a tela Pressão */}
-          <Button title="GLICEMIA" onPress={() => router.push('/glicemia')} /> {/* Navegação para a tela Glicemia */}
+          <Button title="PRESSÃO" onPress={() => router.push('/pressao')} imageSource={(require('@/assets/images/pressao.png'))}/> {/* Navegação para a tela Pressão */}
+          <Button title="GLICEMIA" onPress={() => router.push('/glicemia')} imageSource={(require('@/assets/images/glicemia.png'))}/> {/* Navegação para a tela Glicemia */}
         </View>
         <View style={styles.singleButtonRow}>
-          <Button title="AJUDA" onPress={() => router.push('/ajuda')} imageSource={require('@/assets/images/robo.png')} />
+          <Button title="ASSISTENTE" onPress={() => router.push('/ajuda')} imageSource={require('@/assets/images/robo.png')} />
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useRef } from 'react';
+import * as Speech from 'expo-speech';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   StatusBar,
   StyleSheet,
@@ -12,6 +14,7 @@ import {
 
 export default function PrescricaoScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 80],
@@ -35,6 +38,44 @@ export default function PrescricaoScreen() {
     router.push('/farmacias'); // Isso irá direcionar para o arquivo farmacias.tsx
   };
 
+  const speakPrescricaoScreenContent = async () => {
+    if (isSpeaking) {
+      Speech.stop();
+      return;
+    }
+
+    let contentToSpeak = "Tela de Prescrições. ";
+    contentToSpeak += "Hosana, você deve voltar no médico em 25 dias. ";
+    contentToSpeak += "Minhas Prescrições: ";
+
+    data.forEach(med => {
+      contentToSpeak += `${med.nome}. Como tomar: `;
+      med.horarios.forEach(h => {
+        contentToSpeak += `${h}. `;
+      });
+      contentToSpeak += "Você pode pegar esse medicamento de graça. ";
+    });
+
+    Speech.speak(contentToSpeak, {
+      language: 'pt-BR',
+      onStart: () => setIsSpeaking(true),
+      onDone: () => setIsSpeaking(false),
+      onStopped: () => setIsSpeaking(false),
+      onError: (error) => {
+        console.error('Erro ao reproduzir fala na tela Prescrição:', error);
+        setIsSpeaking(false);
+        Alert.alert("Erro na Leitura", "Não foi possível ler o conteúdo da tela.");
+      },
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+      setIsSpeaking(false);
+    };
+  }, []);
+
   return (
     <View style={styles.container}>
       {/* Header animado */}
@@ -47,7 +88,9 @@ export default function PrescricaoScreen() {
             <Ionicons name="arrow-back" size={24} color="#004894" />
             <Text style={styles.backText}>voltar</Text>
           </TouchableOpacity>
-          <Ionicons name="volume-high" size={34} color="#004894" />
+          <TouchableOpacity onPress={speakPrescricaoScreenContent}>
+            <Ionicons name={isSpeaking ? "volume-off" : "volume-high"} size={34} color="#004894" />
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.noticeText}>

@@ -118,7 +118,7 @@ export default function CuidadosScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  listContainer: { paddingBottom: 20, paddingHorizontal: 10 },
+  listContainer: { paddingBottom: 20, paddingHorizontal: 10, marginTop: -40 },
   searchSection: { paddingHorizontal: 20, alignItems: 'center' },
   searchTitle: { fontSize: 28, fontWeight: 'bold', color: '#004894', marginBottom: 20 },
   searchInputWrapper: {
