@@ -21,6 +21,17 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack initialRouteName="index">
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="glicemia" options={{ headerShown: false }} />
+        <Stack.Screen name="pressao" options={{ headerShown: false }} />
+        <Stack.Screen name="cuidados" options={{ headerShown: false }} />
+        <Stack.Screen name="prescricao" options={{ headerShown: false }} />
+        <Stack.Screen name="registropressao" options={{ headerShown: false }} />
+        <Stack.Screen name="iniciarmrpa" options={{ headerShown: false }} />
+        <Stack.Screen name="dicaspressao" options={{ headerShown: false }} />
+        <Stack.Screen name="farmacias" options={{ headerShown: false }} />
+        <Stack.Screen name="dicasglicemia" options={{ headerShown: false }} />
+        <Stack.Screen name="explore" options={{ headerShown: false }} />
+        <Stack.Screen name="ajuda" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>

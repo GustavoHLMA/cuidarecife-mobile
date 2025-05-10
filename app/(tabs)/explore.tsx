@@ -1,6 +1,7 @@
 import Header from '@/components/Header'; // Importe o seu componente Header
 import { useRouter } from 'expo-router'; // Inicializando o hook useRouter para navegação
 import { useRef } from 'react';
+import { Image } from 'expo-image'; // Importe o Image do expo-image
 import {
   Alert,
   Animated,
@@ -25,11 +26,12 @@ export default function ExploreScreen() {
     }
   };
 
-  const Button = ({ title, onPress }: { title: string, onPress: () => void }) => (
+  const Button = ({ title, onPress, imageSource }: { title: string, onPress: () => void, imageSource?: any }) => (
     <TouchableOpacity
       style={styles.button}
-      onPress={onPress} // Alterando para o onPress passar a navegação
+      onPress={onPress}
     >
+      {imageSource && <Image source={imageSource} style={styles.buttonImage} contentFit="contain" />}
       <Text style={styles.buttonText}>{title}</Text>
     </TouchableOpacity>
   );
@@ -65,7 +67,7 @@ export default function ExploreScreen() {
           <Button title="GLICEMIA" onPress={() => router.push('/glicemia')} /> {/* Navegação para a tela Glicemia */}
         </View>
         <View style={styles.singleButtonRow}>
-          <Button title="AJUDA" onPress={() => handlePress()} />
+          <Button title="AJUDA" onPress={() => router.push('/ajuda')} imageSource={require('@/assets/images/robo.png')} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -138,11 +140,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+    padding: 10, // Adicionar padding para acomodar a imagem e o texto
   },
   buttonText: {
     color: '#074173',
     fontSize: 22, // Ajustado para tamanho mais confortável
     fontWeight: '600',
     textAlign: 'center',
+    marginTop: 5, // Adicionar margem se a imagem estiver presente
+  },
+  buttonImage: {
+    width: 60, // Ajuste o tamanho da imagem conforme necessário
+    height: 60, // Ajuste o tamanho da imagem conforme necessário
+    marginBottom: 8, // Espaço entre a imagem e o texto
   },
 });
