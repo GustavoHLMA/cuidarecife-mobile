@@ -15,6 +15,7 @@ import {
 export default function PrescricaoScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false); // NOVO: Estado para o loading da verificação
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 80],
@@ -76,6 +77,49 @@ export default function PrescricaoScreen() {
     };
   }, []);
 
+  // NOVO: Função para verificar a prescrição com a IA
+  const handleVerifyPrescription = async () => {
+    if (isVerifying) return;
+    setIsVerifying(true);
+
+    const API_BASE_URL = 'https://cuidarecife-api.onrender.com'; // Use a URL base da sua API
+    const VERIFY_ENDPOINT = `${API_BASE_URL}/prescription/verify`; // CORRIGIDO: Adicionado /api
+
+    // Coleta os dados da prescrição para enviar
+    const prescriptionData = {
+      patientName: "Hosana", // Pode ser dinâmico se tiver essa informação
+      returnInDays: 25,    // Pode ser dinâmico
+      medications: data.map(med => ({
+        name: med.nome,
+        instructions: med.horarios.join('; ') // Junta os horários em uma string
+      }))
+    };
+
+    try {
+      Alert.alert("Verificando...", "Enviando prescrição para análise pela IA. Isso pode levar alguns segundos.");
+
+      const response = await fetch(VERIFY_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(prescriptionData),
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        Alert.alert("Resultado da Verificação", responseData.analysisResult || "Não foi possível obter um resultado claro.");
+      } else {
+        Alert.alert("Erro na Verificação", responseData.message || `Erro ${response.status} ao contatar o servidor.`);
+      }
+    } catch (error: any) {
+      console.error('Erro ao verificar prescrição:', error);
+      Alert.alert("Erro", "Não foi possível conectar ao serviço de verificação. Verifique sua conexão ou tente mais tarde.");
+    }
+    setIsVerifying(false);
+  };
+
   return (
     <View style={styles.container}>
       {/* Header animado */}
@@ -108,6 +152,18 @@ export default function PrescricaoScreen() {
         scrollEventThrottle={16}
       >
         <Text style={styles.sectionTitle}>MINHAS PRESCRIÇÕES</Text>
+
+        {/* NOVO: Botão para Verificar Prescrição */}
+        <TouchableOpacity 
+          style={[styles.verifyButton, isVerifying ? styles.verifyButtonDisabled : {}]}
+          onPress={handleVerifyPrescription}
+          disabled={isVerifying}
+        >
+          <Ionicons name="shield-checkmark-outline" size={24} color="#fff" style={{marginRight: 10}} />
+          <Text style={styles.verifyButtonText}>
+            {isVerifying ? "Verificando com IA..." : "Verificar Prescrição com IA"}
+          </Text>
+        </TouchableOpacity>
 
         {data.map((med, index) => (
           <View key={index} style={styles.card}>
@@ -202,7 +258,7 @@ const styles = StyleSheet.create({
     fontSize: 25,
     marginTop: 30,
     color: '#001D5C',
-    marginBottom: 30,
+    marginBottom: 20, // Ajustado para dar espaço ao novo botão
   },
   prescriptionList: {
     paddingHorizontal: 16,
@@ -257,5 +313,31 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 24,
+  },
+  // NOVO: Estilos para o botão de verificação
+  verifyButton: {
+    flexDirection: 'row',
+    backgroundColor: '#002867', // Verde para uma ação positiva/segura
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 30, // Espaço antes da lista de cards
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  verifyButtonDisabled: {
+    backgroundColor: '#cccccc',
+  },
+  verifyButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 18,
+    textAlign: 'center',
   },
 });
