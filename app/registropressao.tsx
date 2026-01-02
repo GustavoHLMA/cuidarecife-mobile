@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
+    Alert,
     Dimensions,
     SafeAreaView,
     ScrollView,
@@ -9,19 +11,69 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    ActivityIndicator,
 } from 'react-native';
+import { api } from '../services/api';
 
 const { width } = Dimensions.get('window');
 
 export default function RegistroPressaoScreen() {
   const router = useRouter();
+  const [pressao, setPressao] = useState('');
+  const [data, setData] = useState('');
+  const [hora, setHora] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleBack = () => {
     router.back();
   };
 
-  const handleAdd = () => {
-    console.log('Pressão adicionada');
+  const handleAdd = async () => {
+    if (!pressao.trim()) {
+      Alert.alert('Erro', 'Por favor, informe o valor da pressão.');
+      return;
+    }
+
+    // Parse pressure format: "120/80"
+    const parts = pressao.split('/');
+    if (parts.length !== 2) {
+      Alert.alert('Erro', 'Formato inválido. Use o formato: 120/80');
+      return;
+    }
+
+    const systolic = parseInt(parts[0].trim(), 10);
+    const diastolic = parseInt(parts[1].trim(), 10);
+
+    if (isNaN(systolic) || isNaN(diastolic) || systolic <= 0 || diastolic <= 0) {
+      Alert.alert('Erro', 'Valores de pressão inválidos.');
+      return;
+    }
+
+    // Parse date and time
+    let measuredAt: Date;
+    try {
+      const [day, month, year] = (data || new Date().toLocaleDateString('pt-BR')).split('/');
+      const [hours, minutes] = (hora || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })).split(':');
+      measuredAt = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(minutes));
+    } catch {
+      measuredAt = new Date();
+    }
+
+    setIsLoading(true);
+    const result = await api.savePressureReading({
+      systolic,
+      diastolic,
+      measuredAt: measuredAt.toISOString(),
+    });
+    setIsLoading(false);
+
+    if (result.data) {
+      Alert.alert('Sucesso', 'Pressão registrada com sucesso!', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    } else {
+      Alert.alert('Erro', result.error || 'Não foi possível salvar a pressão.');
+    }
   };
 
   return (
@@ -39,30 +91,30 @@ export default function RegistroPressaoScreen() {
         <Text style={styles.label}>Pressão (mmHg)</Text>
         <TextInput
           style={styles.input}
-          placeholder="Escreva aqui apenas os números ex: 120/80"
+          placeholder="Ex: 120/80"
           placeholderTextColor="#666"
-          multiline
-          textAlignVertical="top"
+          value={pressao}
+          onChangeText={setPressao}
         />
 
         {/* Campo Data */}
         <Text style={styles.label}>Data</Text>
         <TextInput
           style={styles.input}
-          placeholder="ex: 08/05/2025"
+          placeholder={new Date().toLocaleDateString('pt-BR')}
           placeholderTextColor="#666"
-          multiline
-          textAlignVertical="top"
+          value={data}
+          onChangeText={setData}
         />
 
         {/* Campo Hora */}
         <Text style={styles.label}>Hora</Text>
         <TextInput
           style={styles.input}
-          placeholder="ex: 18:33"
+          placeholder={new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           placeholderTextColor="#666"
-          multiline
-          textAlignVertical="top"
+          value={hora}
+          onChangeText={setHora}
         />
 
         {/* Botões */}
@@ -71,8 +123,16 @@ export default function RegistroPressaoScreen() {
             <Text style={styles.backText}>voltar</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
-            <Text style={styles.addText}>adicionar</Text>
+          <TouchableOpacity 
+            style={[styles.addButton, isLoading ? { opacity: 0.7 } : null]} 
+            onPress={handleAdd}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#003164" />
+            ) : (
+              <Text style={styles.addText}>adicionar</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>

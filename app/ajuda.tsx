@@ -15,8 +15,7 @@ import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import MarkdownDisplay from 'react-native-markdown-display'; 
-
-const API_URL = 'https://cuidarecife-api.onrender.com/chat'; // <<< IMPORTANT: Configure this
+import { api } from '@/services/api';
 
 interface Message {
   id: string;
@@ -60,43 +59,26 @@ export default function AjudaScreen() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message: trimmedInput }),
-      });
+      // Usar o serviço de API autenticado
+      const result = await api.sendChatMessage(trimmedInput);
 
-      const contentType = response.headers.get("content-type");
-      if (!response.ok) {
-        let errorData;
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-          errorData = await response.json();
-        } else {
-          const errorText = await response.text();
-          console.error('Backend error (not JSON):', errorText);
-          throw new Error(errorText.substring(0, 100) || 'Falha ao conectar com o assistente. Resposta não é JSON.');
-        }
-        throw new Error(errorData.error || 'Falha ao conectar com o assistente.');
+      if (result.error) {
+        throw new Error(result.error);
       }
 
-      if (contentType && contentType.indexOf("application/json") !== -1) {
-        const data = await response.json();
+      if (result.data?.reply) {
         const aiReply: Message = {
           id: Date.now().toString() + '-ai',
-          text: data.reply,
+          text: result.data.reply,
           sender: 'ai',
         };
         setMessages((prevMessages) => [...prevMessages, aiReply]);
       } else {
-        const responseText = await response.text();
-        console.error('Unexpected content type from backend:', contentType, 'Response text:', responseText);
         throw new Error('Resposta inesperada do servidor.');
       }
 
     } catch (error: any) {
-      console.error('Error in handleSendMessage:', error);
+      console.error('[Chat] Erro:', error);
       Alert.alert('Erro', error.message || 'Não foi possível obter uma resposta do assistente.');
     } finally {
       setIsLoading(false);
@@ -107,7 +89,7 @@ export default function AjudaScreen() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0} // Ajustado o offset
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0} // Ajustado o offset
     >
       <Stack.Screen options={{ title: 'Ajuda - Chat Saúde' }} />
       <ScrollView
@@ -123,9 +105,9 @@ export default function AjudaScreen() {
               msg.sender === 'user' ? styles.userMessageRow : styles.aiMessageRow,
             ]}
           >
-            {msg.sender === 'ai' && (
+            {msg.sender === 'ai' ? (
               <ExpoImage source={roboImage} style={styles.aiAvatar} />
-            )}
+            ) : null}
             <View
               style={[
                 styles.messageBubble,
@@ -146,14 +128,14 @@ export default function AjudaScreen() {
             </View>
           </View>
         ))}
-        {isLoading && messages[messages.length -1].sender === 'user' && (
+        {isLoading ? (messages[messages.length -1].sender === 'user' ? (
           <View style={[styles.messageRow, styles.aiMessageRow]}>
             <ExpoImage source={roboImage} style={styles.aiAvatar} />
             <View style={[styles.messageBubble, styles.aiMessage, styles.loadingBubble]}>
               <ActivityIndicator size="small" color="#003164" />
             </View>
           </View>
-        )}
+        ) : null) : null}
       </ScrollView>
       <View style={styles.inputContainer}>
         <TextInput
@@ -163,11 +145,14 @@ export default function AjudaScreen() {
           placeholder="Digite sua dúvida sobre saúde..."
           placeholderTextColor="#646262"
           editable={!isLoading}
+          multiline
         />
         <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton} disabled={isLoading}>
-          {isLoading && messages[messages.length -1].sender !== 'user' ? (
+          {isLoading ? (messages[messages.length -1].sender !== 'user' ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
+            <Ionicons name="send" size={24} color="#fff" />
+          )) : (
             <Ionicons name="send" size={24} color="#fff" />
           )}
         </TouchableOpacity>
@@ -181,7 +166,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F0F0F0',
     paddingTop: 50,
-    marginBottom: 20, 
   },
   messagesContainer: {
     flex: 1,
@@ -245,20 +229,24 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     padding: 10,
     borderTopWidth: 1,
     borderTopColor: '#DDD',
+    marginBottom: 10,
   },
   input: {
     flex: 1,
-    height: 45,
+    minHeight: 45,
+    maxHeight: 100,
     backgroundColor: '#F0F0F0',
     borderRadius: 22,
     paddingHorizontal: 15,
+    paddingVertical: 10,
     marginRight: 10,
     fontSize: 16,
     borderColor: '#E0E0E0',
+    borderWidth: 1,
   },
   sendButton: {
     backgroundColor: '#2196F3',

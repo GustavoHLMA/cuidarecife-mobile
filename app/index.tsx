@@ -1,13 +1,17 @@
 import { ThemedText } from '@/components/ThemedText';
 import { useRouter } from 'expo-router';
-import { Image, SafeAreaView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function LoginScreen() {
+export default function WelcomeScreen() {
   const router = useRouter();
 
-  const handleLogin = async () => {
-    console.log('Login bem-sucedido');
-    router.replace('/(tabs)/medicamentos');
+  const handleLogin = () => {
+    router.push('/login?mode=login');
+  };
+
+  const handleCadastro = () => {
+    router.push('/login?mode=register');
   };
 
   return (
@@ -27,14 +31,19 @@ export default function LoginScreen() {
         style={styles.arrowImage}
       />
 
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <ThemedText type="title" style={styles.loginButtonText}>
-          ENTRAR COM
-        </ThemedText>
-        <ThemedText type="title" style={styles.loginButtonText2}>
-          CONECTA RECIFE
-        </ThemedText>
-      </TouchableOpacity>
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+          <ThemedText type="title" style={styles.loginButtonText}>
+            ENTRAR
+          </ThemedText>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.cadastroButton} onPress={handleCadastro}>
+          <ThemedText type="title" style={styles.cadastroButtonText}>
+            CADASTRAR
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
 
       <Image
         source={require('@/assets/images/Doki1.png')}
@@ -53,14 +62,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   logo: {
-    width: 200, // Ajuste o tamanho conforme necessário
+    width: 200,
     height: 100,
     resizeMode: 'contain',
-    top: -200,
+    top: -150,
   },
   textContainer: {
     alignItems: 'flex-start',
-    marginBottom: 20, // Reduzido para dar espaço para a seta
+    marginBottom: 20,
     marginLeft: 30,
     top: -120,
   },
@@ -75,39 +84,54 @@ const styles = StyleSheet.create({
     color: '#004894',
   },
   arrowImage: {
-    width: 100,
+    width: 50,
     height: 120,
     marginBottom: 70,
     position: 'absolute',
     resizeMode: 'contain',
   },
+  buttonsContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+    marginLeft: 130,
+    zIndex: 10,
+  },
   loginButton: {
-    backgroundColor: '#82BDFB',
-    width: 210,
-    height: 60,
+    backgroundColor: '#004894',
+    width: 220,
+    height: 55,
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 100,
-    marginLeft: 120,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
-    zIndex: 10,
   },
   loginButtonText: {
-    color: '#074173',
-    fontSize: 18,
-    fontWeight: '500',
-    marginBottom : -5,
-  },
-  loginButtonText2: {
-    marginRight: 10,
-    fontSize: 18,
+    color: '#fff',
+    fontSize: 20,
     fontWeight: '700',
-    color: '#074173',
+  },
+  cadastroButton: {
+    backgroundColor: '#82BDFB',
+    width: 220,
+    height: 55,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  cadastroButtonText: {
+    color: '#004894',
+    fontSize: 20,
+    fontWeight: '700',
   },
   dokiImage: {
     width: 500,
@@ -119,3 +143,4 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
 });
+

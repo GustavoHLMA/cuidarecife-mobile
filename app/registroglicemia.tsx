@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+    Alert,
     Dimensions,
     Pressable,
     SafeAreaView,
@@ -11,25 +12,66 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    ActivityIndicator,
 } from 'react-native';
+import { api } from '../services/api';
 
 const { width } = Dimensions.get('window');
 
 export default function RegistroGlicemiaScreen() {
   const router = useRouter();
+  const [glicemia, setGlicemia] = useState('');
+  const [data, setData] = useState('');
+  const [hora, setHora] = useState('');
   const [antesRefeicao, setAntesRefeicao] = useState(false);
   const [aposRefeicao, setAposRefeicao] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleBack = () => {
     router.back();
   };
 
-  const handleAdd = () => {
-    console.log('Glicemia adicionada');
-    console.log({
-      antesRefeicao,
-      aposRefeicao,
+  const handleAdd = async () => {
+    if (!glicemia.trim()) {
+      Alert.alert('Erro', 'Por favor, informe o valor da glicemia.');
+      return;
+    }
+
+    const value = parseInt(glicemia, 10);
+    if (isNaN(value) || value <= 0) {
+      Alert.alert('Erro', 'Valor de glicemia inválido.');
+      return;
+    }
+
+    // Parse date and time
+    let measuredAt: Date;
+    try {
+      const [day, month, year] = (data || new Date().toLocaleDateString('pt-BR')).split('/');
+      const [hours, minutes] = (hora || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })).split(':');
+      measuredAt = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(minutes));
+    } catch {
+      measuredAt = new Date();
+    }
+
+    let mealContext: 'before' | 'after' | null = null;
+    if (antesRefeicao) mealContext = 'before';
+    else if (aposRefeicao) mealContext = 'after';
+
+    setIsLoading(true);
+    const result = await api.saveGlucoseReading({
+      value,
+      measuredAt: measuredAt.toISOString(),
+      mealContext,
     });
+    setIsLoading(false);
+
+    if (result.data) {
+      Alert.alert('Sucesso', 'Glicemia registrada com sucesso!', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    } else {
+      Alert.alert('Erro', result.error || 'Não foi possível salvar a glicemia.');
+    }
   };
 
   return (
@@ -49,43 +91,44 @@ export default function RegistroGlicemiaScreen() {
           style={styles.input}
           placeholder="Escreva aqui apenas os números ex: 120"
           placeholderTextColor="#666"
-          multiline
-          textAlignVertical="top"
+          keyboardType="numeric"
+          value={glicemia}
+          onChangeText={setGlicemia}
         />
 
         {/* Campo Data */}
         <Text style={styles.label}>Data</Text>
         <TextInput
           style={styles.input}
-          placeholder="ex: 08/05/2025"
+          placeholder={new Date().toLocaleDateString('pt-BR')}
           placeholderTextColor="#666"
-          multiline
-          textAlignVertical="top"
+          value={data}
+          onChangeText={setData}
         />
 
         {/* Campo Hora */}
         <Text style={styles.label}>Hora</Text>
         <TextInput
           style={styles.input}
-          placeholder="ex: 18:33"
+          placeholder={new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           placeholderTextColor="#666"
-          multiline
-          textAlignVertical="top"
+          value={hora}
+          onChangeText={setHora}
         />
 
         {/* Marcar Refeição */}
         <Text style={styles.label}>MARQUE AQUI</Text>
 
         <View style={styles.checkboxRow}>
-          <Pressable onPress={() => setAntesRefeicao(!antesRefeicao)} style={styles.checkbox}>
-            {antesRefeicao && <View style={styles.checkboxChecked} />}
+          <Pressable onPress={() => { setAntesRefeicao(!antesRefeicao); setAposRefeicao(false); }} style={styles.checkbox}>
+            {antesRefeicao ? <View style={styles.checkboxChecked} /> : null}
           </Pressable>
           <Text style={styles.checkboxLabel}>Antes da refeição</Text>
         </View>
 
         <View style={styles.checkboxRow}>
-          <Pressable onPress={() => setAposRefeicao(!aposRefeicao)} style={styles.checkbox}>
-            {aposRefeicao && <View style={styles.checkboxChecked} />}
+          <Pressable onPress={() => { setAposRefeicao(!aposRefeicao); setAntesRefeicao(false); }} style={styles.checkbox}>
+            {aposRefeicao ? <View style={styles.checkboxChecked} /> : null}
           </Pressable>
           <Text style={styles.checkboxLabel}>Após a refeição</Text>
         </View>
@@ -96,8 +139,16 @@ export default function RegistroGlicemiaScreen() {
             <Text style={styles.backText}>voltar</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
-            <Text style={styles.addText}>adicionar</Text>
+          <TouchableOpacity 
+            style={[styles.addButton, isLoading ? { opacity: 0.7 } : null]} 
+            onPress={handleAdd}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#003164" />
+            ) : (
+              <Text style={styles.addText}>adicionar</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
