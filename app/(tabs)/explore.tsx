@@ -1,24 +1,38 @@
 import Header from '@/components/Header';
+import { useAuth } from '@/contexts/AuthContext';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech'; // ADICIONADO
-import { useEffect, useRef, useState } from 'react'; // ADICIONADO useState, useEffect
+import * as Speech from 'expo-speech';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
   Linking,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+const Button = ({ title, onPress, imageSource }: { title: string, onPress: () => void, imageSource?: any }) => (
+  <TouchableOpacity
+    style={styles.button}
+    onPress={onPress}
+  >
+    {imageSource ? <Image source={imageSource} style={styles.buttonImage} contentFit="contain" /> : null}
+    <Text style={styles.buttonText}>{title}</Text>
+  </TouchableOpacity>
+);
 
 export default function ExploreScreen() {
+  const { user, logout } = useAuth();
   const scrollY = useRef(new Animated.Value(0)).current;
   const router = useRouter();
-  const [isSpeaking, setIsSpeaking] = useState(false); // ADICIONADO
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // ... (handlers remain same, but avoiding re-definition of Button)
 
   const handlePress = (link?: string) => {
     if (link) {
@@ -28,27 +42,41 @@ export default function ExploreScreen() {
     }
   };
 
-  const Button = ({ title, onPress, imageSource }: { title: string, onPress: () => void, imageSource?: any }) => (
-    <TouchableOpacity
-      style={styles.button}
-      onPress={onPress}
-    >
-      {imageSource && <Image source={imageSource} style={styles.buttonImage} contentFit="contain" />}
-      <Text style={styles.buttonText}>{title}</Text>
-    </TouchableOpacity>
-  );
+  const handleLogout = () => {
+    Alert.alert(
+      'Sair do aplicativo',
+      'Tem certeza que deseja sair?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sair', 
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.replace('/');
+          }
+        },
+      ]
+    );
+  };
 
-  const speakExploreScreenContent = async () => { // ADICIONADA FUNÇÃO
+  const handleMenuPress = (option: 'conta' | 'configuracoes') => {
+    if (option === 'conta') {
+      Alert.alert('Conta', 'Tela de conta em desenvolvimento.');
+    } else if (option === 'configuracoes') {
+      Alert.alert('Configurações', 'Tela de configurações em desenvolvimento.');
+    }
+  };
+
+  const speakExploreScreenContent = async () => {
     if (isSpeaking) {
       Speech.stop();
       return;
     }
 
-    // Conteúdo específico da tela Explore
-    // Você pode tornar isso mais dinâmico buscando os textos dos componentes se necessário
     let contentToSpeak = "Tela Explorar. ";
-    contentToSpeak += "FALTAM 25 DIAS PARA SUA CONSULTA. "; // Exemplo, idealmente viria de uma variável
-    contentToSpeak += `Olá Hosana, o que deseja fazer hoje? `; // Assumindo que 'user' está acessível ou você pode definir um nome padrão
+    contentToSpeak += "FALTAM 25 DIAS PARA SUA CONSULTA. "; 
+    contentToSpeak += `Olá ${user?.name || 'usuário'}, o que deseja fazer hoje? `;
     contentToSpeak += "Opções disponíveis: CADASTRO, PRESCRIÇÃO, GLICEMIA, PRESSÃO, AJUDA. ";
 
     Speech.speak(contentToSpeak, {
@@ -64,7 +92,7 @@ export default function ExploreScreen() {
     });
   };
 
-  useEffect(() => { // ADICIONADO useEffect para cleanup
+  useEffect(() => {
     return () => {
       Speech.stop();
       setIsSpeaking(false);
@@ -73,7 +101,12 @@ export default function ExploreScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header scrollY={scrollY} onReadPress={speakExploreScreenContent} /> {/* MODIFICADO */}
+      <Header 
+        scrollY={scrollY} 
+        onReadPress={speakExploreScreenContent} 
+        onLogoutPress={handleLogout}
+        onMenuPress={handleMenuPress}
+      />
 
       <ScrollView
         contentContainerStyle={styles.contentContainer}
@@ -83,23 +116,22 @@ export default function ExploreScreen() {
         )}
         scrollEventThrottle={16}
       >
-        {/* Contagem regressiva */}
         <Text style={styles.countdownText}>FALTAM 25 DIAS</Text>
         <Text style={styles.subText}>PARA SUA CONSULTA</Text>
 
         <View style={styles.separator} />
 
-        {/* Olá Hosana em negrito */}
-        <Text style={styles.greetingText}>Olá Hosana, o que deseja fazer hoje?</Text>
+        <Text style={styles.greetingText}>
+          Olá {user?.name ? user.name : 'usuário'}, o que deseja fazer hoje?
+        </Text>
 
-        {/* Botões */}
         <View style={styles.buttonRow}>
           <Button title="CADASTRO" onPress={() => handlePress()} imageSource={(require('@/assets/images/cadastro.png'))} />
-          <Button title="PRESCRIÇÃO" onPress={() => router.push('/prescricao')} imageSource={(require('@/assets/images/presc.png'))} /> {/* Navegação para a tela Prescrição */}
+          <Button title="PRESCRIÇÃO" onPress={() => router.push('/prescricao')} imageSource={(require('@/assets/images/presc.png'))} /> 
         </View>
         <View style={styles.buttonRow}>
-          <Button title="PRESSÃO" onPress={() => router.push('/pressao')} imageSource={(require('@/assets/images/pressao.png'))}/> {/* Navegação para a tela Pressão */}
-          <Button title="GLICEMIA" onPress={() => router.push('/glicemia')} imageSource={(require('@/assets/images/glicemia.png'))}/> {/* Navegação para a tela Glicemia */}
+          <Button title="PRESSÃO" onPress={() => router.push('/pressao')} imageSource={(require('@/assets/images/pressao.png'))}/> 
+          <Button title="GLICEMIA" onPress={() => router.push('/glicemia')} imageSource={(require('@/assets/images/glicemia.png'))}/> 
         </View>
         <View style={styles.singleButtonRow}>
           <Button title="ASSISTENTE" onPress={() => router.push('/ajuda')} imageSource={require('@/assets/images/robo.png')} />
@@ -185,8 +217,8 @@ const styles = StyleSheet.create({
     marginTop: 5, // Adicionar margem se a imagem estiver presente
   },
   buttonImage: {
-    width: 60, // Ajuste o tamanho da imagem conforme necessário
-    height: 60, // Ajuste o tamanho da imagem conforme necessário
-    marginBottom: 8, // Espaço entre a imagem e o texto
+    width: 60,
+    height: 60,
+    marginBottom: 8,
   },
 });
