@@ -59,8 +59,16 @@ export default function AjudaScreen() {
     setIsLoading(true);
 
     try {
-      // Usar o serviço de API autenticado
-      const result = await api.sendChatMessage(trimmedInput);
+      // Prepara histórico das mensagens anteriores (exceto a mensagem inicial)
+      const chatHistory = messages
+        .filter(msg => msg.id !== 'initial-ai-message')
+        .map(msg => ({
+          role: msg.sender === 'user' ? 'user' as const : 'model' as const,
+          content: msg.text,
+        }));
+
+      // Usar o serviço de API autenticado com histórico
+      const result = await api.sendChatMessage(trimmedInput, chatHistory);
 
       if (result.error) {
         throw new Error(result.error);

@@ -154,10 +154,13 @@ class ApiService {
   }
 
   // Protected API methods
-  async sendChatMessage(message: string): Promise<ApiResponse<{ reply: string }>> {
+  async sendChatMessage(
+    message: string,
+    history?: Array<{ role: 'user' | 'model'; content: string }>
+  ): Promise<ApiResponse<{ reply: string }>> {
     return this.request('/chat', {
       method: 'POST',
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, history }),
     });
   }
 
