@@ -38,7 +38,13 @@ interface MedicationFromAPI {
   dosesTakenToday: number;
   dosesRequired: number;
   isComplete: boolean;
-  weekHistory?: Array<{ day: number; status: 'taken' | 'forgotten' | 'pending' | 'future' }>;
+  weekHistory?: Array<{ 
+    day: number; 
+    taken: number;
+    required: number;
+    percentage: number;
+    status: 'complete' | 'partial' | 'missed' | 'pending' | 'future';
+  }>;
   doseLogs: Array<{
     id: string;
     scheduledTime?: string;
@@ -55,8 +61,14 @@ interface DisplayMedication {
   instruction: string | null;
   image: any;
   doseLogId?: string;
-  status: 'pending' | 'taken' | 'forgotten';  // Status da dose
-  weekHistory: Array<{ day: number; status: 'taken' | 'forgotten' | 'pending' | 'future' }>;
+  status: 'pending' | 'taken' | 'forgotten';
+  weekHistory: Array<{ 
+    day: number; 
+    taken: number;
+    required: number;
+    percentage: number;
+    status: 'complete' | 'partial' | 'missed' | 'pending' | 'future';
+  }>;
 }
 
 const SunIcon = () => (
@@ -218,10 +230,13 @@ export default function MedicamentosScreen() {
         return;
       }
 
-      // Atualizar status para 'taken' localmente
+      // Atualizar status localmente e recarregar para atualizar weekHistory
       setMedicationsList(prev => prev.map(med => 
         med.id === displayMed.id ? { ...med, status: 'taken' as const, doseLogId: result.data?.doseLog?.id } : med
       ));
+      
+      // Refresh para atualizar weekHistory (pills)
+      await loadMedications();
       
     } catch (error: any) {
       Alert.alert('Erro', error.message || 'Não foi possível registrar a dose.');
@@ -247,10 +262,13 @@ export default function MedicamentosScreen() {
         return;
       }
 
-      // Atualizar status para 'forgotten' localmente
+      // Atualizar status localmente e recarregar para atualizar weekHistory
       setMedicationsList(prev => prev.map(med => 
         med.id === displayMed.id ? { ...med, status: 'forgotten' as const, doseLogId: result.data?.doseLog?.id } : med
       ));
+      
+      // Refresh para atualizar weekHistory (pills)
+      await loadMedications();
       
     } catch (error: any) {
       Alert.alert('Erro', error.message || 'Não foi possível marcar como esquecido.');
@@ -442,20 +460,28 @@ export default function MedicamentosScreen() {
         <View style={styles.pillsVisualContainer}>
           {Array.from({ length: 7 }).map((_, i) => {
             const dayHistory = medication.weekHistory?.[i];
-            // Default: branco com borda cinza
+            const percentage = dayHistory?.percentage ?? 0;
+            const status = dayHistory?.status ?? 'future';
+            
+            // Cores baseadas no status e percentage
             let pillBg = '#FFFFFF';
             let pillBorder = '#D0D0D0';
             let dividerColor = '#B0B0B0';
+            let fillHeight = '0%';
             
-            if (dayHistory) {
-              if (dayHistory.status === 'taken') {
-                // Amarelo = tomou corretamente
-                pillBg = '#FFCD00';
-                pillBorder = '#E5B800';
-                dividerColor = '#DAA520';
-              }
-              // 'forgotten', 'pending' e 'future' permanecem brancos
+            if (status === 'complete') {
+              // Completo = totalmente amarelo
+              pillBg = '#FFCD00';
+              pillBorder = '#E5B800';
+              dividerColor = '#DAA520';
+              fillHeight = '100%';
+            } else if (status === 'partial') {
+              // Parcial = preenchimento proporcional
+              pillBorder = '#E5B800';
+              dividerColor = '#DAA520';
+              fillHeight = `${Math.round(percentage * 100)}%`;
             }
+            // 'missed', 'pending' e 'future' permanecem brancos
             
             return (
               <View
@@ -463,12 +489,26 @@ export default function MedicamentosScreen() {
                 style={[
                   styles.pillVisual,
                   { 
-                    backgroundColor: pillBg,
+                    backgroundColor: status === 'complete' ? pillBg : '#FFFFFF',
                     borderColor: pillBorder,
                     borderWidth: 1.5,
+                    overflow: 'hidden',
                   }
                 ]}
               >
+                {/* Preenchimento proporcional para partial */}
+                {status === 'partial' ? (
+                  <View 
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: `${Math.round(percentage * 100)}%` as any,
+                      backgroundColor: '#FFCD00',
+                    }} 
+                  />
+                ) : null}
                 <View style={[styles.pillDivider, { backgroundColor: dividerColor }]} />
               </View>
             );
