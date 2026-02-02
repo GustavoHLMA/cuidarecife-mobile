@@ -22,6 +22,7 @@ export default function LoginScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -42,6 +43,11 @@ export default function LoginScreen() {
       return;
     }
 
+    if (!isLogin && !neighborhood.trim()) {
+      Alert.alert('Erro', 'Por favor, informe seu bairro para encontrar farmácias próximas.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -49,7 +55,7 @@ export default function LoginScreen() {
       if (isLogin) {
         result = await login(email.trim(), password);
       } else {
-        result = await register(name.trim(), email.trim(), password);
+        result = await register(name.trim(), email.trim(), password, neighborhood.trim());
       }
 
       if (result.success) {
@@ -92,6 +98,20 @@ export default function LoginScreen() {
               placeholderTextColor="#999"
               value={name}
               onChangeText={setName}
+              autoCapitalize="words"
+            />
+          </View>
+        ) : null}
+
+        {!isLogin ? (
+          <View style={styles.inputContainer}>
+            <Ionicons name="location-outline" size={24} color="#004894" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Seu bairro (ex: Boa Viagem)"
+              placeholderTextColor="#999"
+              value={neighborhood}
+              onChangeText={setNeighborhood}
               autoCapitalize="words"
             />
           </View>

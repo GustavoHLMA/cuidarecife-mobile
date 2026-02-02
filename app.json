@@ -36,6 +36,13 @@
         }
       ],
       [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permitir que $(PRODUCT_NAME) use sua localização para encontrar farmácias próximas.",
+          "locationWhenInUsePermission": "Permitir que $(PRODUCT_NAME) use sua localização para encontrar farmácias próximas."
+        }
+      ],
+      [
         "@sentry/react-native/expo",
         {
           "url": "https://sentry.io/",

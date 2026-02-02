@@ -84,7 +84,7 @@ const MoonIcon = () => (
 );
 
 export default function MedicamentosScreen() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const scrollY = useRef(new Animated.Value(0)).current;
   const [medicationsList, setMedicationsList] = useState<DisplayMedication[]>([]);
@@ -98,6 +98,24 @@ export default function MedicamentosScreen() {
   const headerMaxHeight = 200;
   const profileImageOverflowHeight = 70;
   const initialContentPaddingTop = headerMaxHeight + profileImageOverflowHeight;
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Sair do aplicativo',
+      'Tem certeza que deseja sair?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sair', 
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.replace('/');
+          }
+        },
+      ]
+    );
+  };
 
   // Carregar medicamentos do dia
   const loadMedications = async (showRefresh = false) => {
@@ -546,7 +564,7 @@ export default function MedicamentosScreen() {
 
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
-      <Header scrollY={scrollY} onReadPress={speakScreenContent} />
+      <Header scrollY={scrollY} onReadPress={speakScreenContent} onLogoutPress={handleLogout} />
       <Animated.ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingTop: initialContentPaddingTop }}

@@ -1,5 +1,7 @@
 import Header from '@/components/Header';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRef, useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
   Alert,
   Animated,
@@ -45,12 +47,32 @@ const cuidadosData = [
 ];
 
 export default function CuidadosScreen() {
+  const { logout } = useAuth();
+  const router = useRouter();
   const scrollY = useRef(new Animated.Value(0)).current;
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredData = cuidadosData.filter(item =>
     item.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Sair do aplicativo',
+      'Tem certeza que deseja sair?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sair', 
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.replace('/');
+          }
+        },
+      ]
+    );
+  };
 
   const handlePress = (link?: string) => {
     if (link) {
@@ -77,7 +99,7 @@ export default function CuidadosScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header scrollY={scrollY} onReadPress={() => {}} />
+      <Header scrollY={scrollY} onReadPress={() => {}} onLogoutPress={handleLogout} />
 
       <FlatList
         data={filteredData}

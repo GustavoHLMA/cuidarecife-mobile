@@ -6,6 +6,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  neighborhood?: string;
 }
 
 interface AuthContextType {
@@ -13,7 +14,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (name: string, email: string, password: string, neighborhood?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
 }
 
@@ -71,8 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { success: true };
   }
 
-  async function register(name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> {
-    const response = await api.register(name, email, password);
+  async function register(name: string, email: string, password: string, neighborhood?: string): Promise<{ success: boolean; error?: string }> {
+    const response = await api.register(name, email, password, neighborhood);
 
     if (response.error) {
       return { success: false, error: response.error };

@@ -123,10 +123,10 @@ class ApiService {
   }
 
   // Auth methods
-  async register(name: string, email: string, password: string): Promise<ApiResponse<{ message: string; userId: string }>> {
+  async register(name: string, email: string, password: string, neighborhood?: string): Promise<ApiResponse<{ message: string; userId: string }>> {
     return this.request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, neighborhood }),
     });
   }
 
@@ -301,6 +301,27 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(data || {}),
     });
+  }
+
+  // Busca farmácias populares ordenadas por proximidade
+  async getPharmacies(location?: { lat: number; lng: number }): Promise<ApiResponse<{
+    count: number;
+    hasUserLocation: boolean;
+    data: Array<{
+      id: string;
+      name: string;
+      address: string;
+      neighborhood: string;
+      cep: string | null;
+      phone: string | null;
+      latitude: number | null;
+      longitude: number | null;
+      distance: number | null; // distância em km
+      fullAddress: string;
+    }>;
+  }>> {
+    const query = location ? `?lat=${location.lat}&lng=${location.lng}` : '';
+    return this.request(`/pharmacies${query}`);
   }
 }
 
