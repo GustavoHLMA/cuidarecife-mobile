@@ -131,12 +131,12 @@ export default function ExploreScreen() {
         </Text>
 
         <View style={styles.buttonRow}>
-          <Button title="CADASTRO" onPress={() => handlePress()} imageSource={(require('@/assets/images/CADASTRO.png'))} />
+          <Button title="CADASTRO" onPress={() => handlePress()} imageSource={(require('@/assets/images/cadastro.png'))} />
           <Button title="PRESCRIÇÃO" onPress={() => router.push('/prescricao')} imageSource={(require('@/assets/images/presc.png'))} /> 
         </View>
         <View style={styles.buttonRow}>
-          <Button title="PRESSÃO" onPress={() => router.push('/pressao')} imageSource={(require('@/assets/images/PRESSAO.png'))}/> 
-          <Button title="GLICEMIA" onPress={() => router.push('/glicemia')} imageSource={(require('@/assets/images/GLICEMIA.png'))}/> 
+          <Button title="PRESSÃO" onPress={() => router.push('/pressao')} imageSource={(require('@/assets/images/pressao.png'))}/> 
+          <Button title="GLICEMIA" onPress={() => router.push('/glicemia')} imageSource={(require('@/assets/images/glicemia.png'))}/> 
         </View>
         <View style={styles.singleButtonRow}>
           <Button title="ASSISTENTE" onPress={() => router.push('/ajuda')} imageSource={require('@/assets/images/robo.png')} />
