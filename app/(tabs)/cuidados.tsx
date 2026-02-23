@@ -1,13 +1,12 @@
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
+import { useRef, useState } from 'react';
 import {
   Alert,
   Animated,
   FlatList,
   Image,
-  Linking,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -20,29 +19,15 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 const cuidadosData = [
   {
     id: '1',
-    image: require('@/assets/images/cuid1.png'),
-    title: 'Dicas e cuidados com os pés diabéticos',
-    link: 'https://www.iamspe.sp.gov.br/wp-content/uploads/2017/01/cartilha-pe-diabetico.pdf',
+    image: require('@/assets/images/cuid2.png'),
+    title: 'Atividade física',
+    link: 'https://gabygraciano.github.io/conteudo-saude-acessivel/conteudo.html?id=atividade-fisica&v=2',
   },
   {
     id: '2',
-    image: require('@/assets/images/cuid2.png'),
-    title: 'Exercícios para fazer em casa e mudar sua vida',
-  },
-  {
-    id: '3',
-    image: require('@/assets/images/cuid3.png'),
-    title: 'Dicas de receitas com baixo teor de sódio',
-  },
-  {
-    id: '4',
     image: require('@/assets/images/cuid4.png'),
-    title: 'Dieta fácil com baixo teor de açúcar',
-  },
-  {
-    id: '5',
-    image: require('@/assets/images/cuid5.png'),
-    title: 'Cuidados com a hipoglicemia',
+    title: 'Alimentação saudável',
+    link: 'https://gabygraciano.github.io/conteudo-saude-acessivel/conteudo.html?id=alimentacao-saudavel&v=2',
   },
 ];
 
@@ -62,8 +47,8 @@ export default function CuidadosScreen() {
       'Tem certeza que deseja sair?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Sair', 
+        {
+          text: 'Sair',
           style: 'destructive',
           onPress: async () => {
             await logout();
@@ -76,7 +61,7 @@ export default function CuidadosScreen() {
 
   const handlePress = (link?: string) => {
     if (link) {
-      Linking.openURL(link).catch((err) => console.error('Erro ao abrir link:', err));
+      router.push({ pathname: '/conteudo', params: { url: link } });
     } else {
       Alert.alert('Conteúdo indisponível', 'Este conteúdo ainda está sendo preparado.');
     }
@@ -99,7 +84,7 @@ export default function CuidadosScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header scrollY={scrollY} onReadPress={() => {}} onLogoutPress={handleLogout} />
+      <Header scrollY={scrollY} onReadPress={() => { }} onLogoutPress={handleLogout} />
 
       <FlatList
         data={filteredData}
