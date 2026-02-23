@@ -155,15 +155,45 @@ export default function PrescricaoScreen() {
       }
 
       if (result.data?.medications ? result.data.medications.length > 0 : false) {
-        const meds = (result.data?.medications || []).map((med, index) => ({
+        const newMeds = (result.data?.medications || []).map((med, index) => ({
           ...med,
-          id: `temp-${index}`,
+          id: `temp-${Date.now()}-${index}`,
           isFree: true,
         }));
         
-        setExtractedMedications(meds);
+        let mergedMeds = [...medications];
+        let hasConflict = false;
+        let conflictDetails = '';
+
+        for (const newMed of newMeds) {
+          const existingMedIndex = mergedMeds.findIndex(
+            m => m.name.toLowerCase() === newMed.name.toLowerCase()
+          );
+
+          if (existingMedIndex >= 0) {
+            hasConflict = true;
+            conflictDetails += `• ${newMed.name} já existe na sua lista.\n`;
+            // Por padrão substituimos o antigo com o novo, mas deixamos o alerta pro usuario
+            mergedMeds[existingMedIndex] = newMed;
+          } else {
+            mergedMeds.push(newMed);
+          }
+        }
+        
+        setExtractedMedications(mergedMeds);
         setExtractedText(result.data?.extractedText || '');
-        setShowEditModal(true);
+
+        if (hasConflict && medications.length > 0) {
+          Alert.alert(
+            'Medicamentos Substituídos',
+            `Alguns medicamentos lidos já estavam na sua prescrição e foram substituídos pela nova dosagem/horário:\n\n${conflictDetails}\nRevise os itens antes de salvar.`,
+            [
+              { text: 'Entendi', onPress: () => setShowEditModal(true) }
+            ]
+          );
+        } else {
+          setShowEditModal(true);
+        }
       } else {
         Alert.alert(
           'Nenhum Medicamento Encontrado',
@@ -179,6 +209,24 @@ export default function PrescricaoScreen() {
     } finally {
       setIsExtracting(false);
     }
+  };
+
+  const handleEditPrescription = () => {
+    // Clona os medicamentos atuais para edição
+    if (medications.length === 0) {
+      Alert.alert('Atenção', 'Você ainda não possui medicamentos para editar. Adicione uma nova prescrição.');
+      return;
+    }
+    
+    // Converter Medication[] para o formato do modal
+    const editableMeds = medications.map(med => ({
+      ...med,
+      id: med.id || `temp-${Date.now()}-${Math.random()}`,
+    }));
+    
+    setExtractedMedications(editableMeds);
+    setExtractedText('Modo de edição da prescrição atual.');
+    setShowEditModal(true);
   };
 
   // Funções de edição de medicamentos
@@ -232,7 +280,7 @@ export default function PrescricaoScreen() {
           dosage: med.dosage,
           instructions: med.instructions || 'Conforme orientação médica',
           timesPerDay: med.timesPerDay || 1,
-          times: med.times || ['08:00'],
+          times: med.times && med.times.length === med.timesPerDay ? med.times : Array(med.timesPerDay || 1).fill('08:00'),
           isFree: true,
         })),
       });
@@ -388,14 +436,82 @@ export default function PrescricaoScreen() {
                       styles.timesPerDayButton,
                       med.timesPerDay === num ? styles.timesPerDayButtonActive : null
                     ]}
-                    onPress={() => updateMedication(index, 'timesPerDay', num)}
+                    onPress={() => {
+                      updateMedication(index, 'timesPerDay', num);
+                      
+                      // Ajustar o array de horários baseado na quantidade escolhida
+                      let currentTimes = [];
+                      if (med.times) {
+                         try {
+                           currentTimes = typeof med.times === 'string' ? JSON.parse(med.times) : med.times;
+                           if (!Array.isArray(currentTimes)) currentTimes = [];
+                         } catch (e) {
+                           currentTimes = [];
+                         }
+                      }
+                      
+                      if (currentTimes.length < num) {
+                         // Adicionar '08:00' padrão para os novos slots
+                         const newSlots = Array(num - currentTimes.length).fill('08:00');
+                         updateMedication(index, 'times', [...currentTimes, ...newSlots]);
+                      } else if (currentTimes.length > num) {
+                         // Cortar o array ao tamanho atual
+                         updateMedication(index, 'times', currentTimes.slice(0, num));
+                      }
+                    }}
                   >
                     <Text style={[
                       styles.timesPerDayText,
                       med.timesPerDay === num ? styles.timesPerDayTextActive : null
-                    ]}>{num}x</Text>
+                     ]}>{num}x</Text>
                   </TouchableOpacity>
                 ))}
+              </View>
+
+              <Text style={styles.inputLabel}>Horários (HH:MM)</Text>
+              <View style={styles.timesInputsContainer}>
+                {(() => {
+                  let timesArray = Array(med.timesPerDay || 1).fill('08:00');
+                  if (med.times) {
+                    try {
+                      timesArray = typeof med.times === 'string' ? JSON.parse(med.times) : med.times;
+                      if (!Array.isArray(timesArray)) {
+                        timesArray = Array(med.timesPerDay || 1).fill('08:00');
+                      }
+                    } catch (e) {
+                      console.log('Error parsing times', e);
+                      timesArray = Array(med.timesPerDay || 1).fill('08:00');
+                    }
+                  }
+                  
+                  // Ensure timesArray length matches timesPerDay
+                  if (timesArray.length < (med.timesPerDay || 1)) {
+                    timesArray = [...timesArray, ...Array((med.timesPerDay || 1) - timesArray.length).fill('08:00')];
+                  } else if (timesArray.length > (med.timesPerDay || 1)) {
+                    timesArray = timesArray.slice(0, med.timesPerDay || 1);
+                  }
+
+                  return timesArray.map((time: string, timeIdx: number) => (
+                    <TextInput
+                      key={`time-${index}-${timeIdx}`}
+                      style={styles.timeInput}
+                      value={time}
+                      placeholder="08:00"
+                      keyboardType="numeric"
+                      maxLength={5}
+                      onChangeText={(v) => {
+                        let formatted = v.replace(/[^0-9]/g, '');
+                        if (formatted.length > 2) {
+                          formatted = formatted.slice(0, 2) + ':' + formatted.slice(2, 4);
+                        }
+                        
+                        const newTimes = [...timesArray];
+                        newTimes[timeIdx] = formatted;
+                        updateMedication(index, 'times', newTimes);
+                      }}
+                    />
+                  ));
+                })()}
               </View>
             </View>
           ))}
@@ -459,16 +575,25 @@ export default function PrescricaoScreen() {
 
         {/* Botão para Verificar Prescrição */}
         {medications.length > 0 ? (
-          <TouchableOpacity 
-            style={[styles.verifyButton, isVerifying ? styles.buttonDisabled : null]}
-            onPress={handleVerifyPrescription}
-            disabled={isVerifying}
-          >
-            <Ionicons name="shield-checkmark-outline" size={24} color="#fff" style={{marginRight: 10}} />
-            <Text style={styles.verifyButtonText}>
-              {isVerifying ? "Verificando..." : "Verificar com IA"}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.actionButtonsRow}>
+            <TouchableOpacity 
+              style={[styles.editButton, isVerifying ? styles.buttonDisabled : null]}
+              onPress={handleEditPrescription}
+              disabled={isVerifying}
+            >
+              <Ionicons name="create-outline" size={22} color="#fff" style={{marginRight: 8}} />
+              <Text style={styles.editButtonText}>Editar Atual</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.verifyButtonSmall, isVerifying ? styles.buttonDisabled : null]}
+              onPress={handleVerifyPrescription}
+              disabled={isVerifying}
+            >
+              <Ionicons name="shield-checkmark-outline" size={22} color="#fff" style={{marginRight: 8}} />
+              <Text style={styles.verifyButtonTextSmall}>Verificar com IA</Text>
+            </TouchableOpacity>
+          </View>
         ) : null}
 
         {isLoading ? (
@@ -560,6 +685,45 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  verifyButtonSmall: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#002867',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+  },
+  verifyButtonTextSmall: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 25,
+    gap: 12,
+  },
+  editButton: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#4CAF50',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+  },
+  editButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   buttonDisabled: {
     backgroundColor: '#B0BEC5',
@@ -725,6 +889,23 @@ const styles = StyleSheet.create({
   },
   timesPerDayTextActive: {
     color: '#fff',
+  },
+  timesInputsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 12,
+  },
+  timeInput: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    width: 80,
+    textAlign: 'center',
   },
   addMedicationButton: {
     flexDirection: 'row',

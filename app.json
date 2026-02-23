@@ -17,7 +17,12 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.gustavohlma.cuidarecifemobile"
+      "package": "com.gustavohlma.cuidarecifemobile",
+      "permissions": [
+        "SCHEDULE_EXACT_ALARM",
+        "USE_EXACT_ALARM",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -26,6 +31,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logo-png.png",
+          "color": "#1DB954"
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -49,7 +61,8 @@
           "project": "cuida-recife",
           "organization": "cuida-recife"
         }
-      ]
+      ],
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true

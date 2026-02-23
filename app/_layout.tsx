@@ -7,6 +7,8 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '@/contexts/AuthContext';
 import * as Sentry from '@sentry/react-native';
+import { requestNotificationPermissions } from '@/hooks/useLocalNotifications';
+import { useEffect } from 'react';
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -32,6 +34,10 @@ export default Sentry.wrap(function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+
+  useEffect(() => {
+    requestNotificationPermissions();
+  }, []);
 
   if (!loaded) {
     // Async font loading only occurs in development.

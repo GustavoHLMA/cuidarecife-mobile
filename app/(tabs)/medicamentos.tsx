@@ -19,6 +19,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { 
+  scheduleMedicationAlerts, 
+  cancelMedicationAlerts,
+  scheduleFollowupMeasurement 
+} from '@/hooks/useLocalNotifications';
 
 // Ícones
 const placeholderMedicationIcon = require('@/assets/images/pilula.svg');
@@ -177,6 +182,18 @@ export default function MedicamentosScreen() {
               weekHistory: med.weekHistory || [],
             });
           });
+
+          // Reagendar notificações locais para garantir sincronia
+          scheduleMedicationAlerts({
+            id: med.id,
+            name: med.name,
+            instructions: med.instructions,
+            timesPerDay: med.timesPerDay,
+            isFree: med.isFree,
+            times: med.times,
+            prescriptionId: '',
+            createdAt: new Date(),
+          } as any);
         });
 
         // Ordenar por horário
@@ -630,8 +647,8 @@ export default function MedicamentosScreen() {
                     ) : null}
                     <Text style={styles.periodTitle}>{period}</Text>
                   </View>
-                  {periodMeds.map((med) => (
-                    <View key={med.id} style={styles.medicationItemContainer}>
+                  {periodMeds.map((med, index) => (
+                    <View key={`${med.id}-${med.time}-${index}`} style={styles.medicationItemContainer}>
                       <View style={styles.timeAboveCardContainer}>
                         <ExpoImage source={relogioIcon} style={styles.clockIconStyle} contentFit="contain" />
                         <Text style={styles.timeAboveCardText}>{med.time}</Text>
