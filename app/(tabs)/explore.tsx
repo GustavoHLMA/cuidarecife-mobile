@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useEffect, useRef, useState } from 'react';
+import { scheduleRefillAlert } from '@/hooks/useLocalNotifications';
 import {
   Alert,
   Animated,
@@ -84,7 +85,7 @@ export default function ExploreScreen() {
       onStart: () => setIsSpeaking(true),
       onDone: () => setIsSpeaking(false),
       onStopped: () => setIsSpeaking(false),
-      onError: (error) => {
+      onError: (error: any) => {
         console.error('Erro ao reproduzir fala na tela Explore:', error);
         setIsSpeaking(false);
         Alert.alert("Erro na Leitura", "Não foi possível ler o conteúdo da tela.");
@@ -93,6 +94,10 @@ export default function ExploreScreen() {
   };
 
   useEffect(() => {
+    // Apenas para demonstração do hook funcionando (Alerta de Fim de Estoque)
+    // Em um cenário real, isso seria verificado ao carregar as prescrições
+    scheduleRefillAlert('Losartana 50mg', 3);
+    
     return () => {
       Speech.stop();
       setIsSpeaking(false);
