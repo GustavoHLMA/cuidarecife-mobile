@@ -62,8 +62,7 @@
           "organization": "cuida-recife"
         }
       ],
-      "@sentry/react-native",
-      "expo-speech-recognition"
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true
