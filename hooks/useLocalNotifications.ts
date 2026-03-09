@@ -1,6 +1,6 @@
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { Platform, Alert, Linking } from 'react-native';
 // Removed unneeded medication import as we will use a loose type since it comes from the API shape.
 
 // Como o aplicativo deve se comportar quando recebe uma notificação estando em FOREGROUND
@@ -33,6 +33,14 @@ export const requestNotificationPermissions = async () => {
     }
     if (finalStatus !== 'granted') {
       console.log('Permissão para notificações não foi concedida!');
+      Alert.alert(
+        'Notificações Desativadas',
+        'Para receber lembretes dos seus medicamentos, você precisa permitir as notificações nas configurações do seu celular.',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Abrir Configurações', onPress: () => Linking.openSettings() }
+        ]
+      );
       return false;
     }
     return true;

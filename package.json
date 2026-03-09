@@ -5,9 +5,9 @@
   "scripts": {
     "start": "expo start",
     "dev:local": "cross-env EXPO_PUBLIC_API_ENV=development expo start",
-    "dev:local:tunnel": "cross-env EXPO_PUBLIC_API_ENV=development expo start --tunnel",
+    "dev:local:tunnel": "cross-env EXPO_FORCE_WEBCONTAINER_ENV=1 EXPO_PUBLIC_API_ENV=development expo start --tunnel",
     "dev:prod": "cross-env EXPO_PUBLIC_API_ENV=production expo start",
-    "dev:prod:tunnel": "cross-env EXPO_PUBLIC_API_ENV=production expo start --tunnel",
+    "dev:prod:tunnel": "cross-env EXPO_FORCE_WEBCONTAINER_ENV=1 EXPO_PUBLIC_API_ENV=production expo start --tunnel",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
