@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import MarkdownDisplay from 'react-native-markdown-display'; 
 import { api } from '@/services/api';
+import * as Speech from 'expo-speech';
 
 interface Message {
   id: string;
@@ -33,9 +34,49 @@ export default function AjudaScreen() {
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+  const inputRef = useRef<TextInput>(null);
 
   const roboImage = require('@/assets/images/robo.png');
+
+  // --- Text-to-Speech (Ouvir respostas) ---
+  const handleSpeakMessage = (message: Message) => {
+    if (speakingMessageId === message.id) {
+      Speech.stop();
+      setSpeakingMessageId(null);
+      return;
+    }
+
+    Speech.stop();
+    // Remove markdown formatting for cleaner speech
+    const cleanText = message.text
+      .replace(/[#*_~`>\-\[\]()!]/g, '')
+      .replace(/\n+/g, '. ');
+
+    Speech.speak(cleanText, {
+      language: 'pt-BR',
+      onStart: () => setSpeakingMessageId(message.id),
+      onDone: () => setSpeakingMessageId(null),
+      onStopped: () => setSpeakingMessageId(null),
+      onError: () => setSpeakingMessageId(null),
+    });
+  };
+
+  // Auto-read new AI messages
+  const lastMessageRef = useRef<string | null>(null);
+  useEffect(() => {
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.sender === 'ai' && lastMsg.id !== 'initial-ai-message' && lastMsg.id !== lastMessageRef.current) {
+      lastMessageRef.current = lastMsg.id;
+      handleSpeakMessage(lastMsg);
+    }
+  }, [messages]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => { Speech.stop(); };
+  }, []);
 
   const scrollToBottom = () => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -44,6 +85,15 @@ export default function AjudaScreen() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Botão de microfone: foca no input para ativar teclado de voz nativo
+  const handleMicPress = () => {
+    Alert.alert(
+      'Entrada por Voz',
+      'Para ditar sua mensagem:\n\n1. Toque no campo de texto\n2. No teclado, toque no ícone de microfone 🎤\n3. Fale sua mensagem\n\nO teclado do seu celular possui reconhecimento de voz nativo.',
+      [{ text: 'Entendi', onPress: () => inputRef.current?.focus() }]
+    );
+  };
 
   const handleSendMessage = async () => {
     const trimmedInput = inputText.trim();
@@ -59,7 +109,6 @@ export default function AjudaScreen() {
     setIsLoading(true);
 
     try {
-      // Prepara histórico das mensagens anteriores (exceto a mensagem inicial)
       const chatHistory = messages
         .filter(msg => msg.id !== 'initial-ai-message')
         .map(msg => ({
@@ -67,7 +116,6 @@ export default function AjudaScreen() {
           content: msg.text,
         }));
 
-      // Usar o serviço de API autenticado com histórico
       const result = await api.sendChatMessage(trimmedInput, chatHistory);
 
       if (result.error) {
@@ -97,7 +145,7 @@ export default function AjudaScreen() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0} // Ajustado o offset
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
     >
       <Stack.Screen options={{ title: 'Ajuda - Chat Saúde' }} />
       <ScrollView
@@ -114,26 +162,45 @@ export default function AjudaScreen() {
             ]}
           >
             {msg.sender === 'ai' ? (
-              <ExpoImage source={roboImage} style={styles.aiAvatar} />
+              <ExpoImage source={roboImage} style={styles.aiAvatar} accessible={false} importantForAccessibility="no" />
             ) : null}
             <View
               style={[
                 styles.messageBubble,
                 msg.sender === 'user' ? styles.userMessage : styles.aiMessage,
               ]}
+              accessible={true}
+              accessibilityRole="text"
+              accessibilityLabel={msg.sender === 'user' ? `Você disse: ${msg.text}` : `A inteligência artificial disse: ${msg.text}`}
             >
               {msg.sender === 'user' ? (
-                <Text style={styles.userMessageText}>{msg.text}</Text>
+                <Text style={styles.userMessageText} importantForAccessibility="no">{msg.text}</Text>
               ) : (
                 <MarkdownDisplay
                   style={{
-                    body: styles.aiMessageText, // Estilo base para o corpo do markdown
+                    body: styles.aiMessageText,
                   }}
                 >
                   {msg.text}
                 </MarkdownDisplay>
               )}
             </View>
+            {/* Botão de ouvir na mensagem da IA */}
+            {msg.sender === 'ai' ? (
+              <TouchableOpacity
+                onPress={() => handleSpeakMessage(msg)}
+                style={styles.speakButton}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel={speakingMessageId === msg.id ? "Parar de ouvir resposta" : "Ouvir resposta em voz alta"}
+              >
+                <Ionicons 
+                  name={speakingMessageId === msg.id ? "stop-circle" : "volume-high"} 
+                  size={20} 
+                  color={speakingMessageId === msg.id ? "#FF4444" : "#2196F3"} 
+                />
+              </TouchableOpacity>
+            ) : null}
           </View>
         ))}
         {isLoading ? (messages[messages.length -1].sender === 'user' ? (
@@ -146,7 +213,19 @@ export default function AjudaScreen() {
         ) : null) : null}
       </ScrollView>
       <View style={styles.inputContainer}>
+        {/* Botão do microfone - ativa teclado de voz nativo */}
+        <TouchableOpacity
+          onPress={handleMicPress}
+          style={styles.micButton}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Usar entrada de voz"
+          accessibilityHint="Toque para saber como ditar sua mensagem usando o microfone do teclado"
+        >
+          <Ionicons name="mic-outline" size={24} color="#2196F3" />
+        </TouchableOpacity>
         <TextInput
+          ref={inputRef}
           style={styles.input}
           value={inputText}
           onChangeText={setInputText}
@@ -154,8 +233,19 @@ export default function AjudaScreen() {
           placeholderTextColor="#646262"
           editable={!isLoading}
           multiline
+          accessible={true}
+          accessibilityLabel="Campo de entrada da mensagem"
+          accessibilityHint="Digite aqui a sua pergunta ou use o microfone do teclado para ditar"
         />
-        <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton} disabled={isLoading}>
+        <TouchableOpacity 
+          onPress={handleSendMessage} 
+          style={styles.sendButton} 
+          disabled={isLoading}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Enviar mensagem"
+          accessibilityState={{ disabled: isLoading }}
+        >
           {isLoading ? (messages[messages.length -1].sender !== 'user' ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
@@ -201,7 +291,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   messageBubble: {
-    maxWidth: '80%',
+    maxWidth: '70%',
     padding: 12,
     borderRadius: 18,
     borderWidth: 1,
@@ -235,6 +325,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFF',
   },
+  speakButton: {
+    marginLeft: 6,
+    padding: 6,
+    borderRadius: 16,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -242,6 +340,15 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#DDD',
     marginBottom: 10,
+  },
+  micButton: {
+    padding: 10,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#2196F3',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
   },
   input: {
     flex: 1,

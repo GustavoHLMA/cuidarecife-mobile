@@ -11,10 +11,17 @@ export default function ConteudoScreen() {
         <SafeAreaView style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <TouchableOpacity 
+                    onPress={() => router.back()} 
+                    style={styles.backButton}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel="Voltar"
+                    accessibilityHint="Toca duas vezes para voltar à tela anterior"
+                >
                     <Icon name="arrow-back" size={28} color="#004894" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Conteúdo</Text>
+                <Text style={styles.headerTitle} accessible={true} accessibilityRole="header">Conteúdo</Text>
                 <View style={{ width: 40 }} />
             </View>
             <WebView

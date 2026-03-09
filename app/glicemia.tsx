@@ -70,32 +70,45 @@ export default function GlicemiaScreen() {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Acompanhamento de Glicemia</Text>
-          <Text style={styles.subtitle}>Controle sua glicemia</Text>
+        <View 
+          style={styles.titleContainer}
+          accessible={true}
+          accessibilityRole="header"
+          accessibilityLabel="Acompanhamento de Glicemia. Controle sua glicemia"
+        >
+          <Text style={styles.title} importantForAccessibility="no">Acompanhamento de Glicemia</Text>
+          <Text style={styles.subtitle} importantForAccessibility="no">Controle sua glicemia</Text>
         </View>
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.button}
             onPress={() => router.push('/registroglicemia')}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Registrar nova medição de glicemia"
+            accessibilityHint="Toca duas vezes para abrir o formulário de registro de glicemia"
           >
-            <Ionicons name="add" size={32} color="#fff" />
-            <Text style={styles.buttonText}>REGISTRAR GLICEMIA</Text>
+            <Ionicons name="add" size={32} color="#fff" accessible={false} importantForAccessibility="no" />
+            <Text style={styles.buttonText} importantForAccessibility="no">REGISTRAR GLICEMIA</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.button}
             onPress={() => router.push('/dicasglicemia')}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Ler dicas de como medir a glicemia"
+            accessibilityHint="Toca duas vezes para abrir o guia passo-a-passo"
           >
-            <Ionicons name="information-circle" size={32} color="#fff" />
-            <Text style={styles.buttonText}>COMO MEDIR</Text>
+            <Ionicons name="information-circle" size={32} color="#fff" accessible={false} importantForAccessibility="no" />
+            <Text style={styles.buttonText} importantForAccessibility="no">COMO MEDIR</Text>
           </TouchableOpacity>
         </View>
 
         {/* Histórico */}
         <View style={styles.historyContainer}>
-          <Text style={styles.historyTitle}>ÚLTIMAS MEDIÇÕES</Text>
+          <Text style={styles.historyTitle} accessible={true} accessibilityRole="header">ÚLTIMAS MEDIÇÕES</Text>
           
           {isLoading ? (
             <ActivityIndicator size="large" color="#003164" />
@@ -103,17 +116,22 @@ export default function GlicemiaScreen() {
             <Text style={styles.emptyText}>Nenhuma medição registrada</Text>
           ) : (
             readings.map((reading) => (
-              <View key={reading.id} style={styles.readingCard}>
+              <View 
+                key={reading.id} 
+                style={styles.readingCard}
+                accessible={true}
+                accessibilityLabel={`Medição de glicose. Valor de ${reading.value} miligramas por decilitro. Feita no dia ${formatDate(reading.measuredAt)} às ${formatTime(reading.measuredAt)}.${reading.mealContext ? ' Contexto: ' + getMealLabel(reading.mealContext) : ''}`}
+              >
                 <View style={styles.readingValue}>
-                  <Text style={styles.valueText}>{reading.value}</Text>
-                  <Text style={styles.unitText}>mg/dL</Text>
+                  <Text style={styles.valueText} importantForAccessibility="no">{reading.value}</Text>
+                  <Text style={styles.unitText} importantForAccessibility="no">mg/dL</Text>
                 </View>
                 <View style={styles.readingInfo}>
-                  <Text style={styles.dateText}>
+                  <Text style={styles.dateText} importantForAccessibility="no">
                     {formatDate(reading.measuredAt)} às {formatTime(reading.measuredAt)}
                   </Text>
                   {reading.mealContext ? (
-                    <Text style={styles.contextText}>{getMealLabel(reading.mealContext)}</Text>
+                    <Text style={styles.contextText} importantForAccessibility="no">{getMealLabel(reading.mealContext)}</Text>
                   ) : null}
                 </View>
               </View>

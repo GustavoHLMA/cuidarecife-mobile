@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import * as Speech from 'expo-speech';
 import {
     Alert,
     Dimensions,
@@ -26,6 +27,29 @@ export default function RegistroPressaoScreen() {
 
   const handleBack = () => {
     router.back();
+  };
+
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  useEffect(() => {
+    return () => { Speech.stop(); };
+  }, []);
+
+  const speakScreenContent = () => {
+    if (isSpeaking) {
+      Speech.stop();
+      setIsSpeaking(false);
+      return;
+    }
+
+    const content = "Registrar Pressão. Campos disponíveis: Pressão em mmHg, no formato números, barra e números, exemplo 120 barra 80. Data e Hora. Preencha os campos e toque em adicionar.";
+    Speech.speak(content, {
+      language: 'pt-BR',
+      onStart: () => setIsSpeaking(true),
+      onDone: () => setIsSpeaking(false),
+      onStopped: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+    });
   };
 
   const handleAdd = async () => {
@@ -80,58 +104,83 @@ export default function RegistroPressaoScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Ícone de som */}
-        <View style={styles.soundIcon}>
-          <Ionicons name="volume-high" size={50} color="#003164" />
-        </View>
+        <TouchableOpacity 
+          style={styles.soundIcon}
+          onPress={speakScreenContent}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Ouvir instruções da tela"
+        >
+          <Ionicons name="volume-high" size={50} color="#003164" accessible={false} importantForAccessibility="no" />
+        </TouchableOpacity>
 
         {/* Título */}
-        <Text style={styles.title}>REGISTRAR PRESSÃO</Text>
+        <Text style={styles.title} accessible={true} accessibilityRole="header">REGISTRAR PRESSÃO</Text>
 
         {/* Campo Pressão */}
-        <Text style={styles.label}>Pressão (mmHg)</Text>
+        <Text style={styles.label} importantForAccessibility="no">Pressão (mmHg)</Text>
         <TextInput
           style={styles.input}
           placeholder="Ex: 120/80"
           placeholderTextColor="#666"
           value={pressao}
           onChangeText={setPressao}
+          accessible={true}
+          accessibilityLabel="Campo de Pressão em milímetros de mercúrio"
+          accessibilityHint="Digite sua pressão no formato número, barra e número. Exemplo: 120 barra 80"
         />
 
         {/* Campo Data */}
-        <Text style={styles.label}>Data</Text>
+        <Text style={styles.label} importantForAccessibility="no">Data</Text>
         <TextInput
           style={styles.input}
           placeholder={new Date().toLocaleDateString('pt-BR')}
           placeholderTextColor="#666"
           value={data}
           onChangeText={setData}
+          accessible={true}
+          accessibilityLabel="Campo de Data da medição"
+          accessibilityHint="Digite a data em que essa pressão foi aferida"
         />
 
         {/* Campo Hora */}
-        <Text style={styles.label}>Hora</Text>
+        <Text style={styles.label} importantForAccessibility="no">Hora</Text>
         <TextInput
           style={styles.input}
           placeholder={new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           placeholderTextColor="#666"
           value={hora}
           onChangeText={setHora}
+          accessible={true}
+          accessibilityLabel="Campo de Hora da medição"
         />
 
         {/* Botões */}
         <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Text style={styles.backText}>voltar</Text>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBack}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Voltar"
+            accessibilityHint="Toca duas vezes para voltar à tela anterior"
+          >
+            <Text style={styles.backText} importantForAccessibility="no">voltar</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={[styles.addButton, isLoading ? { opacity: 0.7 } : null]} 
             onPress={handleAdd}
             disabled={isLoading}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Salvar medição"
+            accessibilityState={{ disabled: isLoading }}
           >
             {isLoading ? (
               <ActivityIndicator color="#003164" />
             ) : (
-              <Text style={styles.addText}>adicionar</Text>
+              <Text style={styles.addText} importantForAccessibility="no">adicionar</Text>
             )}
           </TouchableOpacity>
         </View>

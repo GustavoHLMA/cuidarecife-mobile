@@ -81,17 +81,20 @@ export default function LoginScreen() {
         <Image
           source={require('@/assets/images/cuidarecife.png')}
           style={styles.logo}
+          accessible={true}
+          accessibilityRole="image"
+          accessibilityLabel="Logomarca do Cuida Recife"
         />
       </View>
 
       <View style={styles.formContainer}>
-        <Text style={styles.title}>
+        <Text style={styles.title} accessible={true} accessibilityRole="header">
           {isLogin ? 'Entrar' : 'Criar Conta'}
         </Text>
 
         {!isLogin ? (
           <View style={styles.inputContainer}>
-            <Ionicons name="person-outline" size={24} color="#004894" style={styles.inputIcon} />
+            <Ionicons name="person-outline" size={24} color="#004894" style={styles.inputIcon} accessible={false} importantForAccessibility="no" />
             <TextInput
               style={styles.input}
               placeholder="Nome completo"
@@ -99,13 +102,16 @@ export default function LoginScreen() {
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
+              accessible={true}
+              accessibilityLabel="Campo de entrada para o seu Nome completo"
+              accessibilityHint="Digite o seu nome completo para o cadastro"
             />
           </View>
         ) : null}
 
         {!isLogin ? (
           <View style={styles.inputContainer}>
-            <Ionicons name="location-outline" size={24} color="#004894" style={styles.inputIcon} />
+            <Ionicons name="location-outline" size={24} color="#004894" style={styles.inputIcon} accessible={false} importantForAccessibility="no" />
             <TextInput
               style={styles.input}
               placeholder="Seu bairro (ex: Boa Viagem)"
@@ -113,12 +119,15 @@ export default function LoginScreen() {
               value={neighborhood}
               onChangeText={setNeighborhood}
               autoCapitalize="words"
+              accessible={true}
+              accessibilityLabel="Campo de entrada para o seu bairro"
+              accessibilityHint="Digite seu bairro para que possamos encontrar farmácias próximas baseadas nele."
             />
           </View>
         ) : null}
 
         <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={24} color="#004894" style={styles.inputIcon} />
+          <Ionicons name="mail-outline" size={24} color="#004894" style={styles.inputIcon} accessible={false} importantForAccessibility="no" />
           <TextInput
             style={styles.input}
             placeholder="E-mail"
@@ -127,11 +136,14 @@ export default function LoginScreen() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            accessible={true}
+            accessibilityLabel="Campo de entrada para o seu E-mail"
+            accessibilityHint="Digite o seu endereço de email"
           />
         </View>
 
         <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={24} color="#004894" style={styles.inputIcon} />
+          <Ionicons name="lock-closed-outline" size={24} color="#004894" style={styles.inputIcon} accessible={false} importantForAccessibility="no" />
           <TextInput
             style={styles.input}
             placeholder="Senha"
@@ -139,12 +151,22 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
+            accessible={true}
+            accessibilityLabel="Campo de entrada para a sua Senha"
+            accessibilityHint="Digite a sua senha segura"
           />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+          <TouchableOpacity 
+            onPress={() => setShowPassword(!showPassword)}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel={showPassword ? 'Ocultar senha' : 'Mostrar senha digitada'}
+          >
             <Ionicons
               name={showPassword ? 'eye-off-outline' : 'eye-outline'}
               size={24}
               color="#004894"
+              accessible={false}
+              importantForAccessibility="no"
             />
           </TouchableOpacity>
         </View>
@@ -153,6 +175,11 @@ export default function LoginScreen() {
           style={[styles.button, isLoading && styles.buttonDisabled]}
           onPress={handleSubmit}
           disabled={isLoading}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={isLogin ? 'Entrar na conta' : 'Criar nova conta'}
+          accessibilityHint={isLogin ? 'Toca duas vezes para acessar o aplicativo.' : 'Toca duas vezes para registrar a sua nova conta.'}
+          accessibilityState={{ disabled: isLoading }}
         >
           {isLoading ? (
             <ActivityIndicator color="#fff" />
@@ -166,8 +193,11 @@ export default function LoginScreen() {
         <TouchableOpacity
           style={styles.switchButton}
           onPress={() => setIsLogin(!isLogin)}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={isLogin ? 'Não tem uma conta? Botão para ir para a tela de Cadastro' : 'Já tem uma conta? Botão para Voltar ao Entrar'}
         >
-          <Text style={styles.switchText}>
+          <Text style={styles.switchText} importantForAccessibility="no">
             {isLogin
               ? 'Não tem uma conta? Cadastre-se'
               : 'Já tem uma conta? Entrar'}

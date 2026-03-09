@@ -19,27 +19,51 @@ export default function WelcomeScreen() {
       <Image
         source={require('@/assets/images/cuidarecife.png')}
         style={styles.logo}
+        accessible={true}
+        accessibilityRole="image"
+        accessibilityLabel="Logomarca do Cuida Recife"
       />
 
-      <View style={styles.textContainer}>
-        <ThemedText type="title" style={styles.title}>BEM VINDO AO</ThemedText>
-        <ThemedText type="title" style={styles.titleSub}>SEU APLICATIVO COMPANHEIRO</ThemedText>
+      <View 
+        style={styles.textContainer}
+        accessible={true}
+        accessibilityRole="header"
+        accessibilityLabel="Bem vindo ao seu aplicativo companheiro"
+      >
+        <ThemedText type="title" style={styles.title} importantForAccessibility="no">BEM VINDO AO</ThemedText>
+        <ThemedText type="title" style={styles.titleSub} importantForAccessibility="no">SEU APLICATIVO COMPANHEIRO</ThemedText>
       </View>
 
       <Image
         source={require('@/assets/images/arrow.png')}
         style={styles.arrowImage}
+        accessible={false}
+        importantForAccessibility="no"
       />
 
       <View style={styles.buttonsContainer}>
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <ThemedText type="title" style={styles.loginButtonText}>
+        <TouchableOpacity 
+          style={styles.loginButton} 
+          onPress={handleLogin}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Entrar"
+          accessibilityHint="Toca duas vezes para ir para a tela de Login"
+        >
+          <ThemedText type="title" style={styles.loginButtonText} importantForAccessibility="no">
             ENTRAR
           </ThemedText>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.cadastroButton} onPress={handleCadastro}>
-          <ThemedText type="title" style={styles.cadastroButtonText}>
+        <TouchableOpacity 
+          style={styles.cadastroButton} 
+          onPress={handleCadastro}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Cadastrar"
+          accessibilityHint="Toca duas vezes para ir para a tela de Criação de Conta"
+        >
+          <ThemedText type="title" style={styles.cadastroButtonText} importantForAccessibility="no">
             CADASTRAR
           </ThemedText>
         </TouchableOpacity>
@@ -48,6 +72,9 @@ export default function WelcomeScreen() {
       <Image
         source={require('@/assets/images/Doki1.png')}
         style={styles.dokiImage}
+        accessible={true}
+        accessibilityRole="image"
+        accessibilityLabel="Mascote do Cuida Recife dando boas vindas"
       />
     </SafeAreaView>
   );

@@ -440,6 +440,22 @@ export default function MedicamentosScreen() {
     });
   };
 
+  const speakMedication = (med: DisplayMedication) => {
+    Speech.stop();
+    let contentToSpeak = `${med.name} ${med.dosage || ''}. Horário: ${med.time}. `;
+    if (med.instruction) {
+      contentToSpeak += `${med.instruction}. `;
+    }
+    
+    Speech.speak(contentToSpeak, {
+      language: 'pt-BR',
+      onStart: () => setIsSpeaking(true),
+      onDone: () => setIsSpeaking(false),
+      onStopped: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+    });
+  };
+
   const renderMedicationCard = (medication: DisplayMedication) => {
     const isProcessing = processingDose === medication.id;
     
@@ -485,11 +501,22 @@ export default function MedicamentosScreen() {
               </Text>
             ) : null}
           </View>
-          {medication.status !== 'pending' ? (
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusBadgeText}>{statusIcon}</Text>
-            </View>
-          ) : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {medication.status !== 'pending' ? (
+              <View style={styles.statusBadge}>
+                <Text style={styles.statusBadgeText}>{statusIcon}</Text>
+              </View>
+            ) : null}
+            <TouchableOpacity 
+              onPress={() => speakMedication(medication)}
+              style={{ marginLeft: 8 }}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={`Ouvir detalhes de ${medication.name}`}
+            >
+              <Ionicons name="volume-high" size={28} color={textColor} />
+            </TouchableOpacity>
+          </View>
         </View>
         
         <View style={styles.pillsVisualContainer}>

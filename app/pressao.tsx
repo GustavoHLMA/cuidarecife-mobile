@@ -74,32 +74,45 @@ export default function PressaoScreen() {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Acompanhamento de Pressão</Text>
-          <Text style={styles.subtitle}>Controle sua pressão arterial</Text>
+        <View 
+          style={styles.titleContainer}
+          accessible={true}
+          accessibilityRole="header"
+          accessibilityLabel="Acompanhamento de Pressão. Controle sua pressão arterial"
+        >
+          <Text style={styles.title} importantForAccessibility="no">Acompanhamento de Pressão</Text>
+          <Text style={styles.subtitle} importantForAccessibility="no">Controle sua pressão arterial</Text>
         </View>
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.button}
             onPress={() => router.push('/registropressao')}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Registrar nova medição de pressão"
+            accessibilityHint="Toca duas vezes para abrir o formulário de registro de pressão"
           >
-            <Ionicons name="add" size={32} color="#fff" />
-            <Text style={styles.buttonText}>REGISTRAR PRESSÃO</Text>
+            <Ionicons name="add" size={32} color="#fff" accessible={false} importantForAccessibility="no" />
+            <Text style={styles.buttonText} importantForAccessibility="no">REGISTRAR PRESSÃO</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.button}
             onPress={() => router.push('/dicaspressao')}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Ler dicas de como aferir a pressão"
+            accessibilityHint="Toca duas vezes para abrir o guia passo-a-passo"
           >
-            <Ionicons name="information-circle" size={32} color="#fff" />
-            <Text style={styles.buttonText}>COMO AFERIR</Text>
+            <Ionicons name="information-circle" size={32} color="#fff" accessible={false} importantForAccessibility="no" />
+            <Text style={styles.buttonText} importantForAccessibility="no">COMO AFERIR</Text>
           </TouchableOpacity>
         </View>
 
         {/* Histórico */}
         <View style={styles.historyContainer}>
-          <Text style={styles.historyTitle}>ÚLTIMAS MEDIÇÕES</Text>
+          <Text style={styles.historyTitle} accessible={true} accessibilityRole="header">ÚLTIMAS MEDIÇÕES</Text>
           
           {isLoading ? (
             <ActivityIndicator size="large" color="#003164" />
@@ -109,16 +122,21 @@ export default function PressaoScreen() {
             readings.map((reading) => {
               const status = getPressureStatus(reading.systolic, reading.diastolic);
               return (
-                <View key={reading.id} style={[styles.readingCard, { borderLeftColor: status.color }]}>
+                <View 
+                  key={reading.id} 
+                  style={[styles.readingCard, { borderLeftColor: status.color }]}
+                  accessible={true}
+                  accessibilityLabel={`Medição com status ${status.label}. Pressão ${reading.systolic} por ${reading.diastolic} milímetros de mercúrio. Registrada no dia ${formatDate(reading.measuredAt)} às ${formatTime(reading.measuredAt)}.`}
+                >
                   <View style={styles.readingValue}>
-                    <Text style={styles.valueText}>{reading.systolic}/{reading.diastolic}</Text>
-                    <Text style={styles.unitText}>mmHg</Text>
+                    <Text style={styles.valueText} importantForAccessibility="no">{reading.systolic}/{reading.diastolic}</Text>
+                    <Text style={styles.unitText} importantForAccessibility="no">mmHg</Text>
                   </View>
                   <View style={styles.readingInfo}>
-                    <Text style={styles.dateText}>
+                    <Text style={styles.dateText} importantForAccessibility="no">
                       {formatDate(reading.measuredAt)} às {formatTime(reading.measuredAt)}
                     </Text>
-                    <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+                    <Text style={[styles.statusText, { color: status.color }]} importantForAccessibility="no">{status.label}</Text>
                   </View>
                 </View>
               );

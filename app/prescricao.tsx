@@ -349,6 +349,8 @@ export default function PrescricaoScreen() {
       console.log('[Verificação] Resposta:', JSON.stringify(result));
 
       if (result.data?.analysisResult) {
+        Speech.stop();
+        Speech.speak(result.data.analysisResult, { language: 'pt-BR' });
         Alert.alert("Análise da Prescrição", result.data.analysisResult);
       } else {
         console.error('[Verificação] Erro:', result.error);
@@ -374,10 +376,15 @@ export default function PrescricaoScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.modalHeader}>
-          <TouchableOpacity onPress={() => setShowEditModal(false)}>
-            <Ionicons name="close" size={28} color="#004894" />
+          <TouchableOpacity 
+            onPress={() => setShowEditModal(false)}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Fechar modal de edição"
+          >
+            <Ionicons name="close" size={28} color="#004894" accessible={false} importantForAccessibility="no" />
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Revisar Medicamentos</Text>
+          <Text style={styles.modalTitle} accessible={true} accessibilityRole="header">Revisar Medicamentos</Text>
           <TouchableOpacity onPress={savePrescription} disabled={isLoading}>
             {isLoading ? (
               <ActivityIndicator size="small" color="#004894" />
@@ -395,9 +402,14 @@ export default function PrescricaoScreen() {
           {extractedMedications.map((med, index) => (
             <View key={med.id} style={styles.medicationEditCard}>
               <View style={styles.medicationEditHeader}>
-                <Text style={styles.medicationNumber}>Medicamento {index + 1}</Text>
-                <TouchableOpacity onPress={() => removeMedication(index)}>
-                  <Ionicons name="trash-outline" size={22} color="#E53935" />
+                <Text style={styles.medicationNumber} accessible={true} accessibilityRole="header">Medicamento {index + 1}</Text>
+                <TouchableOpacity 
+                  onPress={() => removeMedication(index)}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remover medicamento ${index + 1}`}
+                >
+                  <Ionicons name="trash-outline" size={22} color="#E53935" accessible={false} importantForAccessibility="no" />
                 </TouchableOpacity>
               </View>
 
@@ -555,20 +567,23 @@ export default function PrescricaoScreen() {
           </Text>
         ) : null}
 
-        <Text style={styles.sectionTitle}>MINHAS PRESCRIÇÕES</Text>
+        <Text style={styles.sectionTitle} accessible={true} accessibilityRole="header">MINHAS PRESCRIÇÕES</Text>
 
         {/* Botão para Escanear Prescrição */}
         <TouchableOpacity 
           style={[styles.scanButton, isExtracting ? styles.buttonDisabled : null]}
           onPress={handleScanPrescription}
           disabled={isExtracting}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Escanear e ler uma nova prescrição médica"
         >
           {isExtracting ? (
             <ActivityIndicator size="small" color="#fff" style={{marginRight: 10}} />
           ) : (
-            <Ionicons name="camera-outline" size={24} color="#fff" style={{marginRight: 10}} />
+            <Ionicons name="camera-outline" size={24} color="#fff" style={{marginRight: 10}} accessible={false} importantForAccessibility="no" />
           )}
-          <Text style={styles.scanButtonText}>
+          <Text style={styles.scanButtonText} importantForAccessibility="no">
             {isExtracting ? "Processando..." : "Escanear Prescrição"}
           </Text>
         </TouchableOpacity>
@@ -580,18 +595,24 @@ export default function PrescricaoScreen() {
               style={[styles.editButton, isVerifying ? styles.buttonDisabled : null]}
               onPress={handleEditPrescription}
               disabled={isVerifying}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Editar prescrição atual"
             >
-              <Ionicons name="create-outline" size={22} color="#fff" style={{marginRight: 8}} />
-              <Text style={styles.editButtonText}>Editar Atual</Text>
+              <Ionicons name="create-outline" size={22} color="#fff" style={{marginRight: 8}} accessible={false} importantForAccessibility="no" />
+              <Text style={styles.editButtonText} importantForAccessibility="no">Editar Atual</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
               style={[styles.verifyButtonSmall, isVerifying ? styles.buttonDisabled : null]}
               onPress={handleVerifyPrescription}
               disabled={isVerifying}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Verificar interações medicamentosas com a Inteligência artificial"
             >
-              <Ionicons name="shield-checkmark-outline" size={22} color="#fff" style={{marginRight: 8}} />
-              <Text style={styles.verifyButtonTextSmall}>Verificar com IA</Text>
+              <Ionicons name="shield-checkmark-outline" size={22} color="#fff" style={{marginRight: 8}} accessible={false} importantForAccessibility="no" />
+              <Text style={styles.verifyButtonTextSmall} importantForAccessibility="no">Verificar com IA</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -609,16 +630,27 @@ export default function PrescricaoScreen() {
         ) : (
           medications.map((med, index) => (
             <View key={med.id || index} style={styles.card}>
-              <Text style={styles.medName}>
-                {med.name}
-                {med.dosage ? <Text style={styles.medDosage}> {med.dosage}</Text> : null}
-              </Text>
-              <Text style={styles.howTo}>Como tomar:</Text>
-              {med.instructions.split(';').map((instruction, i) => (
-                <Text key={i} style={styles.horario}>• {instruction.trim()}</Text>
-              ))}
-              <TouchableOpacity style={styles.button} onPress={navigateToFarmacias}>
-                <Text style={styles.buttonText}>Ver farmácias</Text>
+              <View
+                accessible={true}
+                accessibilityLabel={`Medicamento prescrito: ${med.name}${med.dosage ? ' ' + med.dosage : ''}. Como tomar: ${med.instructions}.`}
+              >
+                <Text style={styles.medName} importantForAccessibility="no">
+                  {med.name}
+                  {med.dosage ? <Text style={styles.medDosage} importantForAccessibility="no"> {med.dosage}</Text> : null}
+                </Text>
+                <Text style={styles.howTo} importantForAccessibility="no">Como tomar:</Text>
+                {med.instructions.split(';').map((instruction, i) => (
+                  <Text key={i} style={styles.horario} importantForAccessibility="no">• {instruction.trim()}</Text>
+                ))}
+              </View>
+              <TouchableOpacity 
+                style={styles.button} 
+                onPress={navigateToFarmacias}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver farmácias populares disponíveis para retirar ${med.name}`}
+              >
+                <Text style={styles.buttonText} importantForAccessibility="no">Ver farmácias</Text>
               </TouchableOpacity>
             </View>
           ))

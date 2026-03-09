@@ -27,7 +27,7 @@ export default function IniciarMRPAScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Título */}
-        <Text style={styles.title}>INICIAR MRPA</Text>
+        <Text style={styles.title} accessible={true} accessibilityRole="header">INICIAR MRPA</Text>
 
         {/* Campo Data */}
         <Text style={styles.label}>Data</Text>
@@ -37,6 +37,8 @@ export default function IniciarMRPAScreen() {
           placeholderTextColor="#666"
           multiline
           textAlignVertical="top"
+          accessible={true}
+          accessibilityLabel="Campo de entrada para a Data"
         />
 
         {/* Campo Manhã */}
@@ -47,6 +49,8 @@ export default function IniciarMRPAScreen() {
           placeholderTextColor="#666"
           multiline
           textAlignVertical="top"
+          accessible={true}
+          accessibilityLabel="Campo de entrada para a medida da Manhã"
         />
 
         {/* Campo Tarde */}
@@ -57,6 +61,8 @@ export default function IniciarMRPAScreen() {
           placeholderTextColor="#666"
           multiline
           textAlignVertical="top"
+          accessible={true}
+          accessibilityLabel="Campo de entrada para a medida da Tarde"
         />
 
         {/* Campo Noite */}
@@ -67,16 +73,30 @@ export default function IniciarMRPAScreen() {
           placeholderTextColor="#666"
           multiline
           textAlignVertical="top"
+          accessible={true}
+          accessibilityLabel="Campo de entrada para a medida da Noite"
         />
 
         {/* Botões */}
         <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Text style={styles.backText}>voltar</Text>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBack}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Voltar"
+          >
+            <Text style={styles.backText} importantForAccessibility="no">voltar</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveText}>SALVAR</Text>
+          <TouchableOpacity 
+            style={styles.saveButton} 
+            onPress={handleSave}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Salvar"
+          >
+            <Text style={styles.saveText} importantForAccessibility="no">SALVAR</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

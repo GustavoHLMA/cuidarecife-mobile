@@ -197,9 +197,16 @@ export default function FarmaciasScreen() {
           },
         ]}
       >
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#004894" />
-          <Text style={styles.backText}>Voltar</Text>
+        <TouchableOpacity 
+          onPress={handleBack} 
+          style={styles.backButton}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Voltar"
+          accessibilityHint="Toca duas vezes para voltar à tela anterior"
+        >
+          <Ionicons name="arrow-back" size={24} color="#004894" accessible={false} importantForAccessibility="no" />
+          <Text style={styles.backText} importantForAccessibility="no">Voltar</Text>
         </TouchableOpacity>
         <Ionicons name="volume-high" size={34} color="#074173" />
       </Animated.View>
@@ -212,23 +219,35 @@ export default function FarmaciasScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#004894']} />
         }
       >
-        <Text style={styles.title}>FARMÁCIAS POPULARES</Text>
+        <Text style={styles.title} accessible={true} accessibilityRole="header">FARMÁCIAS POPULARES</Text>
         
         {/* Status de localização */}
         {hasLocation ? (
-          <View style={styles.locationBanner}>
-            <Ionicons name="location" size={18} color="#4CAF50" />
-            <Text style={styles.locationText}>Ordenado por proximidade</Text>
+          <View style={styles.locationBanner} accessible={true} accessibilityLabel="Localização ativada: Farmácias ordenadas por proximidade">
+            <Ionicons name="location" size={18} color="#4CAF50" accessible={false} importantForAccessibility="no" />
+            <Text style={styles.locationText} importantForAccessibility="no">Ordenado por proximidade</Text>
           </View>
         ) : locationError ? (
-          <TouchableOpacity style={styles.locationErrorBanner} onPress={() => setShowLocationModal(true)}>
-            <Ionicons name="location-outline" size={18} color="#FF9800" />
-            <Text style={styles.locationErrorText}>Toque para ativar localização</Text>
+          <TouchableOpacity 
+            style={styles.locationErrorBanner} 
+            onPress={() => setShowLocationModal(true)}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Localização não ativada. Toque aqui para ativar e ordenar por proximidade"
+          >
+            <Ionicons name="location-outline" size={18} color="#FF9800" accessible={false} importantForAccessibility="no" />
+            <Text style={styles.locationErrorText} importantForAccessibility="no">Toque para ativar localização</Text>
           </TouchableOpacity>
         ) : locationRequested ? (
-          <TouchableOpacity style={styles.locationErrorBanner} onPress={() => setShowLocationModal(true)}>
-            <Ionicons name="location-outline" size={18} color="#2196F3" />
-            <Text style={[styles.locationErrorText, { color: '#1976D2' }]}>Ativar ordenação por proximidade</Text>
+          <TouchableOpacity 
+            style={styles.locationErrorBanner} 
+            onPress={() => setShowLocationModal(true)}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Ativar ordenação de farmácias por proximidade"
+          >
+            <Ionicons name="location-outline" size={18} color="#2196F3" accessible={false} importantForAccessibility="no" />
+            <Text style={[styles.locationErrorText, { color: '#1976D2' }]} importantForAccessibility="no">Ativar ordenação por proximidade</Text>
           </TouchableOpacity>
         ) : null}
 
@@ -263,27 +282,32 @@ export default function FarmaciasScreen() {
           <>
             {visiblePharmacies.map((pharmacy) => (
               <View key={pharmacy.id} style={styles.card}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.cardTitleContainer}>
-                    <Ionicons name="medical" size={28} color="#FFCB00" />
-                    <Text style={styles.cardTitle} numberOfLines={2}>{pharmacy.name}</Text>
-                  </View>
-                  {pharmacy.distance !== null ? (
-                    <View style={styles.distanceBadge}>
-                      <Ionicons name="navigate" size={14} color="#fff" />
-                      <Text style={styles.distanceText}>{formatDistance(pharmacy.distance)}</Text>
+                <View 
+                  accessible={true} 
+                  accessibilityLabel={`Farmácia Popular: ${pharmacy.name}. Endereço: ${pharmacy.address}. Bairro: ${pharmacy.neighborhood}. ${pharmacy.distance !== null ? 'Distância de ' + formatDistance(pharmacy.distance) : ''}`}
+                >
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardTitleContainer}>
+                      <Ionicons name="medical" size={28} color="#FFCB00" accessible={false} importantForAccessibility="no" />
+                      <Text style={styles.cardTitle} numberOfLines={2} importantForAccessibility="no">{pharmacy.name}</Text>
                     </View>
-                  ) : null}
-                </View>
-                
-                <View style={styles.cardContent}>
-                  <View style={styles.infoRow}>
-                    <Ionicons name="location" size={18} color="#FFCB00" />
-                    <Text style={styles.cardAddress}>{pharmacy.address}</Text>
+                    {pharmacy.distance !== null ? (
+                      <View style={styles.distanceBadge}>
+                        <Ionicons name="navigate" size={14} color="#fff" accessible={false} importantForAccessibility="no" />
+                        <Text style={styles.distanceText} importantForAccessibility="no">{formatDistance(pharmacy.distance)}</Text>
+                      </View>
+                    ) : null}
                   </View>
-                  <View style={styles.infoRow}>
-                    <Ionicons name="business" size={18} color="#FFCB00" />
-                    <Text style={styles.cardNeighborhood}>{pharmacy.neighborhood}</Text>
+                  
+                  <View style={styles.cardContent}>
+                    <View style={styles.infoRow}>
+                      <Ionicons name="location" size={18} color="#FFCB00" accessible={false} importantForAccessibility="no" />
+                      <Text style={styles.cardAddress} importantForAccessibility="no">{pharmacy.address}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                      <Ionicons name="business" size={18} color="#FFCB00" accessible={false} importantForAccessibility="no" />
+                      <Text style={styles.cardNeighborhood} importantForAccessibility="no">{pharmacy.neighborhood}</Text>
+                    </View>
                   </View>
                 </View>
                 
@@ -292,18 +316,24 @@ export default function FarmaciasScreen() {
                     <TouchableOpacity
                       style={styles.actionButton}
                       onPress={() => handleCall(pharmacy.phone!)}
+                      accessible={true}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Fazer ligação por telefone para ${pharmacy.name}`}
                     >
-                      <Ionicons name="call" size={18} color="#074173" />
-                      <Text style={styles.actionButtonText}>LIGAR</Text>
+                      <Ionicons name="call" size={18} color="#074173" accessible={false} importantForAccessibility="no" />
+                      <Text style={styles.actionButtonText} importantForAccessibility="no">LIGAR</Text>
                     </TouchableOpacity>
                   ) : null}
                   
                   <TouchableOpacity
                     style={[styles.actionButton, styles.mapsButton]}
                     onPress={() => handleOpenMaps(pharmacy.fullAddress)}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Abrir Google Maps na rota para ${pharmacy.name}`}
                   >
-                    <Ionicons name="map" size={18} color="#fff" />
-                    <Text style={[styles.actionButtonText, { color: '#fff' }]}>VER NO MAPS</Text>
+                    <Ionicons name="map" size={18} color="#fff" accessible={false} importantForAccessibility="no" />
+                    <Text style={[styles.actionButtonText, { color: '#fff' }]} importantForAccessibility="no">VER NO MAPS</Text>
                   </TouchableOpacity>
                 </View>
               </View>
