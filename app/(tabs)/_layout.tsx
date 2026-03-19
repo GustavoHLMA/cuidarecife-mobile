@@ -34,6 +34,7 @@ export default function TabLayout() {
         name="medicamentos"
         options={{
           title: 'MEDICAÇÃO',
+          tabBarAccessibilityLabel: 'Aba de Medicação',
           tabBarIcon: ({ color }) => <Image source={PilulaIcon} style={{ width: 28, height: 28, tintColor: color }} />,
         }}
       />
@@ -41,6 +42,7 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: 'SAÚDE',
+          tabBarAccessibilityLabel: 'Aba de Saúde e Informações',
           tabBarIcon: ({ color }) => <Image source={PlusIcon} style={{ width: 28, height: 28, tintColor: color }} />,
         }}
       />
@@ -48,6 +50,7 @@ export default function TabLayout() {
         name="cuidados"
         options={{
           title: 'CUIDADOS',
+          tabBarAccessibilityLabel: 'Aba de Cuidados Pessoais',
           tabBarIcon: ({ color }) => <Image source={CuidadoIcon} style={{ width: 28, height: 28, tintColor: color }} />,
         }}
       />

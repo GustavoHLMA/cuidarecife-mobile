@@ -2,6 +2,8 @@
 <img src="https://github.com/user-attachments/assets/8b65dc9e-49e5-4166-a287-0e10b8fb5928" width="300" height="200" />
 </div>
 
+# Cuida Recife Mobile
+
 **Cuida Recife** é um aplicativo de **monitoramento contínuo** e **apoio ao autocuidado** para pacientes com **hipertensão** e **diabetes**, focando na **adesão ao tratamento** e fornecendo **funcionalidades de acessibilidade** e **assistência via IA**. O app ajuda pacientes a **gerenciar sua medicação**, acompanhar a **pressão arterial** e **glicemia**, além de oferecer **educação em saúde** e alertas para **interações medicamentosas**.
 
 ## Desafio 🚀
@@ -34,14 +36,12 @@
 
 ![React Native](https://img.shields.io/badge/React%20Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) 
 ![Expo](https://img.shields.io/badge/Expo-1C1E24?style=for-the-badge&logo=expo&logoColor=white) 
-![JavaScript](https://img.shields.io/badge/JavaScript-323330?style=for-the-badge&logo=javascript&logoColor=F7DF1E) 
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white) 
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white) 
 ![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white) 
 ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white) 
-![ChatGPT](https://img.shields.io/badge/ChatGPT-4E9BFF?style=for-the-badge&logo=openai&logoColor=white) 
+![Gemini](https://img.shields.io/badge/Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white)
 ![Cloud Vision API](https://img.shields.io/badge/Cloud%20Vision%20API-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)
-
 
 ## Equipe 🏆
 
@@ -50,53 +50,110 @@
 🖋️ Behance: [behance.net/gabygraciano](https://www.behance.net/gabygraciano)  
 🌐 GitHub: [github.com/gabygraciano](https://github.com/gabygraciano)
 
-Gustavo Henrique Lima Mendes de Almeida<br/>
-📧 E-mail: gustavohlma8@gmail.com<br/>
+**Gustavo Henrique Lima Mendes de Almeida**  
+📧 E-mail: gustavohlma8@gmail.com  
 🌐 GitHub: [github.com/GustavoHLMA](https://github.com/GustavoHLMA)
 
 **Manuelle Graciano Ferreira**
 - 🩺 Médica formada pela ***Universidade de Pernambuco***
 
-  ## Documentação 📄
-
-- [Figma](https://www.figma.com/design/Ey3L81KZqbQ5rCkeKNERm6/Hacker-cidad%C3%A3o-13?node-id=1-2&t=Txk0XatsX8RCfwUZ-1)
-- [Pitch](https://docs.google.com/presentation/d/17AeBh5xvDqSzQEvCWxJrsqBund2Ve4HAdA_-4IjzvaQ/edit?usp=sharing)
-- [Vídeo de Demo](https://youtube.com/demo/cuida-recife)
-
 ## Instalação ⬇️
 
+### 1. Clone o repositório
 ```bash
-- npm install
+git clone https://github.com/GustavoHLMA/cuidarecife-mobile.git
+cd cuidarecife-mobile
 ```
+
+### 2. Instale as dependências
+```bash
+npm install
+```
+
+### 3. Configure as variáveis de ambiente
+Copie o arquivo `.env.example` para `.env`:
+```bash
+cp .env.example .env
+```
+
+Preencha as variáveis de ambiente:
+```env
+# URLs da API
+EXPO_PUBLIC_API_URL_DEV=http://000.000.0.0:3001  # Seu endereço IPv4 local (no terminal-> [windows: 'ipconfig'], [linux: 'ifconfig'])
+EXPO_PUBLIC_API_URL_PROD=https://cuidarecife-api.onrender.com
+```
+
+> **Nota:** A variável `EXPO_PUBLIC_API_ENV` é automaticamente definida pelos scripts `dev:local` e `dev:prod`.
 
 ## Rodando o projeto 🏃
+
+### Desenvolvimento (API local)
 ```bash
-- npx expo start
+npm run dev:local
 ```
+- Conecta ao backend rodando localmente
+- URL: `http://000.000.0.0:3001` (ajuste para seu IP)
+
+### Desenvolvimento (API de produção)
+```bash
+npm run dev:prod
+```
+- Conecta ao backend no Render
+- URL: `https://cuidarecife-api.onrender.com`
+  
+## Configuração de Ambiente 🔧
+
+O app alterna entre ambientes automaticamente:
+
+| Comando | Ambiente | URL da API |
+|---------|----------|------------|
+| `npm run dev:local` | development | `http://SEU_IP:3001` |
+| `npm run dev:prod` | production | `https://cuidarecife-api.onrender.com` |
+
+## Testando no Celular 📱
+
+1. Instale o **Expo Go**:
+   - [iOS](https://apps.apple.com/app/expo-go/id982107779)
+   - [Android](https://play.google.com/store/apps/details?id=host.exp.exponent)
+
+2. Execute:
+   ```bash
+   npm run dev:local  # Para testar com API local
+   # ou
+   npm run dev:prod   # Para testar com API de produção
+   ```
+
+3. Escaneie o QR code:
+   - **iOS**: Use o app Câmera
+   - **Android**: Use o Expo Go
 
 ## Como contribuir 🤝
-### Branches
-Pull requests devem ser compostos pelo tipo e nome da branch.\
-os nomes das branchs devem ser separados por "-".\
-os tipo são compostos por:
-- feature - Para novas funcionalidades
-- fix - Para bugfixes e hotfixes
-
-Exemplo: 
-`feature/navbar-mobile`
 
 ### Commits
-Commits devem ser estruturados da seguinte forma <tipo>(<nome-da-branch>): <descrição do commit>\
-Exemplo: 
-`feature(navbar-mobile): adicionando navegação`
+Commits devem seguir o padrão:
+- `feat(nome da branch): descrição da funcionalidade` - Para novas funcionalidades
+- `hotfix(nome da branch): descrição do bug` - Para bugfixes em main
+- `chore(nome da branch): descroção da tarefa` - Para alterações referentes builds/deploy/serviços externos etc. 
 
-### Branch padrão
-- develop
+```
+feature(medications): adicionar tela de histórico
+fix(auth): corrigir validação de email
+```
 
-### Pull requests
-Pull requests devem ter uma boa e clara descrição.\
-Os 3 principais tópicos da descrição devem ser:
-`- What I did`
-`- How to test`
+## Troubleshooting 🔍
 
+### Erro de conexão com API
+- Verifique se a API está rodando (`npm run dev` no backend)
+- Confirme o IP no `.env` (use `ipconfig` no Windows ou `ifconfig` no Mac/Linux)
+- Certifique-se de estar na mesma rede WiFi
 
+### App não atualiza ao salvar código
+- Pressione `r` no terminal do Expo para reload manual
+- Use `Shift+R` para reload completo (limpa cache)
+
+### Problemas com dependências
+```bash
+rm -rf node_modules
+npm install
+npx expo start -c  # -c limpa o cache
+```

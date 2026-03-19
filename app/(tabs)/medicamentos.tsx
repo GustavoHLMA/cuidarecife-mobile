@@ -1,37 +1,82 @@
-import Header from '@/components/Header'; // Seu componente Header existente
-import { NavigationProp, useNavigation } from '@react-navigation/native'; // << AJUSTADO: Import para navegação e tipagem
+import Header from '@/components/Header';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import * as Speech from 'expo-speech'; // << ADDED: Import Expo Speech
-import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import * as Speech from 'expo-speech';
 import FeedbackPopup from '@/components/FeedbackPopup';
 import { useFeatureFeedback } from '@/hooks/useFeatureFeedback';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { 
+  Alert, 
+  Animated, 
+  Platform, 
+  StyleSheet, 
+  Text, 
+  TouchableOpacity, 
+  View,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { 
+  scheduleMedicationAlerts, 
+  cancelMedicationAlerts,
+  scheduleFollowupMeasurement 
+} from '@/hooks/useLocalNotifications';
 
-// Ícones (SVG já importados no seu código original)
+// Ícones
 const placeholderMedicationIcon = require('@/assets/images/pilula.svg');
 const cameraIcon = require('@/assets/images/camera.svg');
-const solIcon = require('@/assets/images/sol.svg'); // NOVO
-const luaIcon = require('@/assets/images/lua.svg'); // NOVO
-const relogioIcon = require('@/assets/images/relogio.svg'); // NOVO
+const solIcon = require('@/assets/images/sol.svg');
+const luaIcon = require('@/assets/images/lua.svg');
+const relogioIcon = require('@/assets/images/relogio.svg');
 
-// Dados iniciais dos medicamentos conforme sua lista
-const initialMedicationsData = [
-  { id: 'med1', name: 'Losartana', dosage: '50mg', time: '08:00', instruction: null, image: placeholderMedicationIcon },
-  { id: 'med2', name: 'Hidroclorotiazida', dosage: '25mg', time: '08:00', instruction: null, image: placeholderMedicationIcon },
-  { id: 'med3', name: 'Metformina', dosage: '500mg', time: '08:00', instruction: 'Tomar após desjejum', image: placeholderMedicationIcon },
-  { id: 'med4', name: 'Metformina', dosage: '500mg', time: '13:00', instruction: 'Tomar após almoço', image: placeholderMedicationIcon },
-  { id: 'med5', name: 'Sinvastatina', dosage: '40mg', time: '20:00', instruction: 'Tomar após jantar', image: placeholderMedicationIcon },
-  { id: 'med6', name: 'Metformina', dosage: '500mg', time: '20:00', instruction: 'Tomar após jantar', image: placeholderMedicationIcon },
-];
+interface MedicationFromAPI {
+  id: string;
+  name: string;
+  dosage?: string;
+  instructions: string;
+  timesPerDay: number;
+  times: string[];
+  isFree: boolean;
+  dosesTakenToday: number;
+  dosesRequired: number;
+  isComplete: boolean;
+  weekHistory?: Array<{ 
+    day: number; 
+    taken: number;
+    required: number;
+    percentage: number;
+    status: 'complete' | 'partial' | 'missed' | 'pending' | 'future';
+  }>;
+  doseLogs: Array<{
+    id: string;
+    scheduledTime?: string;
+    status?: string;
+    takenAt: string;
+  }>;
+}
 
-const user = {
-  name: 'Hosana',
-};
-
-type RootStackParamList = {
-  farmacias: { medicationName?: string };
-};
+interface DisplayMedication {
+  id: string;
+  name: string;
+  dosage: string;
+  time: string;
+  instruction: string | null;
+  image: any;
+  doseLogId?: string;
+  status: 'pending' | 'taken' | 'forgotten';
+  weekHistory: Array<{ 
+    day: number; 
+    taken: number;
+    required: number;
+    percentage: number;
+    status: 'complete' | 'partial' | 'missed' | 'pending' | 'future';
+  }>;
+}
 
 const SunIcon = () => (
   <View style={styles.periodIconView}>
@@ -46,34 +91,153 @@ const MoonIcon = () => (
 );
 
 export default function MedicamentosScreen() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const scrollY = useRef(new Animated.Value(0)).current;
-  const [medicationsList, setMedicationsList] = useState(
-    initialMedicationsData.sort((a, b) => {
-      const timeA = parseInt(a.time.replace(':', ''));
-      const timeB = parseInt(b.time.replace(':', ''));
-      return timeA - timeB;
-    })
-  );
-  const [isSpeaking, setIsSpeaking] = useState(false); // << ADDED: State for speech status
-
+  const [medicationsList, setMedicationsList] = useState<DisplayMedication[]>([]);
+  const [hasPrescription, setHasPrescription] = useState(false);
+  const [totalMedicationsCount, setTotalMedicationsCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [processingDose, setProcessingDose] = useState<string | null>(null);
   const { showFeedback, incrementUsage, closeFeedback } = useFeatureFeedback("OCR", 3);
-
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const headerMaxHeight = 200;
   const profileImageOverflowHeight = 70;
   const initialContentPaddingTop = headerMaxHeight + profileImageOverflowHeight;
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Sair do aplicativo',
+      'Tem certeza que deseja sair?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sair', 
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.replace('/');
+          }
+        },
+      ]
+    );
+  };
+
+  // Carregar medicamentos do dia
+  const loadMedications = async (showRefresh = false) => {
+    if (showRefresh) setIsRefreshing(true);
+    else setIsLoading(true);
+
+    try {
+      const result = await api.getTodayMedications();
+      
+      if (result.error) {
+        console.error('[Medicamentos] Erro:', result.error);
+        setMedicationsList([]);
+        return;
+      }
+
+      if (result.data?.medications) {
+        const apiMeds = result.data.medications;
+        console.log('[Medicamentos] Recebidos da API:', JSON.stringify(apiMeds, null, 2));
+        setHasPrescription(apiMeds.length > 0);
+        setTotalMedicationsCount(apiMeds.length);
+        
+        // Transformar medicamentos da API para formato de exibição
+        const displayMeds: DisplayMedication[] = [];
+
+        result.data.medications.forEach((med: MedicationFromAPI) => {
+          // Se times for vazio ou null, usar horário padrão baseado em timesPerDay
+          let times = med.times;
+          if (!times || times.length === 0) {
+            // Gerar horários padrão baseado em timesPerDay
+            const timesPerDay = med.timesPerDay || 1;
+            if (timesPerDay === 1) times = ['08:00'];
+            else if (timesPerDay === 2) times = ['08:00', '20:00'];
+            else if (timesPerDay === 3) times = ['08:00', '14:00', '20:00'];
+            else times = ['08:00', '12:00', '16:00', '20:00'];
+          }
+          
+          console.log(`[Medicamentos] ${med.name}: times=${JSON.stringify(times)}, doseLogs=${med.doseLogs?.length || 0}`);
+          const dosesTaken = med.doseLogs || [];
+
+          times.forEach((time) => {
+            // Verificar se essa dose específica foi tomada ou esquecida
+            const doseLog = dosesTaken.find(log => log.scheduledTime === time);
+            
+            // Determinar status baseado no doseLog da API
+            let status: 'pending' | 'taken' | 'forgotten' = 'pending';
+            if (doseLog) {
+              status = doseLog.status === 'forgotten' ? 'forgotten' : 'taken';
+            }
+
+            displayMeds.push({
+              id: `${med.id}-${time}`,
+              name: med.name,
+              dosage: med.dosage || '',
+              time: time,
+              instruction: med.instructions,
+              image: placeholderMedicationIcon,
+              doseLogId: doseLog?.id,
+              status,
+              weekHistory: med.weekHistory || [],
+            });
+          });
+
+          // Reagendar notificações locais para garantir sincronia
+          scheduleMedicationAlerts({
+            id: med.id,
+            name: med.name,
+            instructions: med.instructions,
+            timesPerDay: med.timesPerDay,
+            isFree: med.isFree,
+            times: med.times,
+            prescriptionId: '',
+            createdAt: new Date(),
+          } as any);
+        });
+
+        // Ordenar por horário
+        displayMeds.sort((a, b) => {
+          const timeA = parseInt(a.time.replace(':', ''));
+          const timeB = parseInt(b.time.replace(':', ''));
+          return timeA - timeB;
+        });
+
+        setMedicationsList(displayMeds);
+      } else {
+        setHasPrescription(false);
+        setTotalMedicationsCount(0);
+        setMedicationsList([]);
+      }
+    } catch (error) {
+      console.error('[Medicamentos] Erro ao carregar:', error);
+      setMedicationsList([]);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // Carregar ao focar na tela
+  useFocusEffect(
+    useCallback(() => {
+      loadMedications();
+    }, [])
+  );
 
   useEffect(() => {
     (async () => {
       if (Platform.OS !== 'web') {
         const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
         if (cameraStatus.status !== 'granted') {
-          Alert.alert('Permissão necessária', 'Precisamos de acesso à câmera para esta funcionalidade.');
+          Alert.alert('Permissão necessária', 'Precisamos de acesso à câmera para verificar medicamentos.');
         }
       }
     })();
-    // Clean up speech when the component unmounts
+    
     return () => {
       Speech.stop();
       setIsSpeaking(false);
@@ -82,108 +246,77 @@ export default function MedicamentosScreen() {
 
   const getTimeOfDay = (time: string) => {
     const hour = parseInt(time.split(':')[0]);
-    if (hour < 17) return 'MANHÃ';
+    if (hour < 12) return 'MANHÃ';
+    if (hour < 17) return 'TARDE';
     return 'NOITE';
   };
 
-  const handleTakeMedication = (medicationId: string) => {
-    setMedicationsList(currentMeds => currentMeds.filter(med => med.id !== medicationId));
+  const handleTakeMedication = async (displayMed: DisplayMedication) => {
+    // Se já foi tomado, ignorar
+    if (displayMed.status === 'taken') return;
+    
+    const realMedId = displayMed.id.split('-')[0];
+    const scheduledTime = displayMed.time;
+
+    setProcessingDose(displayMed.id);
+
+    try {
+      const result = await api.recordDose(realMedId, { scheduledTime });
+
+      if (result.error) {
+        Alert.alert('Erro', result.error);
+        return;
+      }
+
+      // Atualizar status localmente e recarregar para atualizar weekHistory
+      setMedicationsList(prev => prev.map(med => 
+        med.id === displayMed.id ? { ...med, status: 'taken' as const, doseLogId: result.data?.doseLog?.id } : med
+      ));
+      
+      // Refresh para atualizar weekHistory (pills)
+      await loadMedications();
+      
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Não foi possível registrar a dose.');
+    } finally {
+      setProcessingDose(null);
+    }
+  };
+
+  const handleForgotten = async (displayMed: DisplayMedication) => {
+    // Se já está esquecido, ignorar
+    if (displayMed.status === 'forgotten') return;
+    
+    const realMedId = displayMed.id.split('-')[0];
+    const scheduledTime = displayMed.time;
+
+    setProcessingDose(displayMed.id);
+
+    try {
+      const result = await api.markForgotten(realMedId, { scheduledTime });
+
+      if (result.error) {
+        Alert.alert('Erro', result.error);
+        return;
+      }
+
+      // Atualizar status localmente e recarregar para atualizar weekHistory
+      setMedicationsList(prev => prev.map(med => 
+        med.id === displayMed.id ? { ...med, status: 'forgotten' as const, doseLogId: result.data?.doseLog?.id } : med
+      ));
+      
+      // Refresh para atualizar weekHistory (pills)
+      await loadMedications();
+      
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Não foi possível marcar como esquecido.');
+    } finally {
+      setProcessingDose(null);
+    }
   };
 
   const handleOutOfStock = (medicationName: string) => {
-    navigation.navigate('farmacias', { medicationName }); // << AJUSTADO: Navegação real
-  };
-
-  const processImageForOCR = async (uri: string) => {
-    console.log('Imagem para processar via API do backend:', uri);
-    const API_BASE_URL = 'http://localhost:3001';
-    const BACKEND_API_URL = `${API_BASE_URL}/vision/analyze-image`;
-
-    try {
-      Alert.alert('Processando...', 'Enviando imagem para reconhecimento de texto. Isso pode levar alguns segundos.');
-      const response = await fetch(uri);
-      const blob = await response.blob();
-
-      const base64ImageData = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === 'string') {
-            resolve(reader.result.split(',')[1]);
-          } else {
-            reject(new Error('Falha ao ler o arquivo como string base64.'));
-          }
-        };
-        reader.onerror = (error) => reject(error);
-        reader.readAsDataURL(blob);
-      });
-
-      const body = {
-        image: base64ImageData,
-      };
-
-      const apiResponse = await fetch(BACKEND_API_URL, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-
-      const responseText = await apiResponse.text();
-      console.log('Raw backend response status:', apiResponse.status);
-      console.log('Raw backend response text:', responseText);
-
-      if (apiResponse.ok && responseText) {
-        const result = JSON.parse(responseText);
-
-        if (result.extractedText) {
-          const extractedText = result.extractedText;
-          console.log('Texto Extraído (Backend API):', extractedText);
-          
-          await incrementUsage(); // Trigger OCR usage count
-
-          const normalizedExtractedText = extractedText.toLowerCase().replace(/\s+/g, ' ').trim();
-          console.log('Texto Normalizado:', normalizedExtractedText);
-
-          let foundMedication = null;
-          let highestMatchScore = 0;
-
-          for (const med of initialMedicationsData) {
-            const normalizedMedName = med.name.toLowerCase().trim();
-            if (normalizedExtractedText.includes(normalizedMedName)) {
-              const currentScore = normalizedMedName.length;
-              if (currentScore > highestMatchScore) {
-                highestMatchScore = currentScore;
-                foundMedication = med;
-              }
-            }
-          }
-
-          if (foundMedication) {
-            Alert.alert('Medicamento Encontrado!', `O texto enviado parece corresponder a um dos seus remédios.`);
-          } else {
-            Alert.alert('Atenção!', `O texto extraído não corresponde aos seus medicamentos listados. Verifique com cuidado.`);
-          }
-        } else {
-          console.log('Backend API response OK, mas sem extractedText:', result);
-          Alert.alert('OCR Falhou', result.message || 'Resposta inesperada da API do backend (sem texto extraído).');
-        }
-      } else {
-        console.log('Resposta da API do backend com erro ou vazia. Status:', apiResponse.status);
-        let errorDetails = `Erro ${apiResponse.status}.`;
-        try {
-          const errorResult = JSON.parse(responseText);
-          errorDetails = errorResult.message || responseText;
-        } catch {
-          errorDetails = responseText.substring(0, 200) + (responseText.length > 200 ? "..." : "");
-        }
-        Alert.alert('OCR Falhou', errorDetails);
-      }
-    } catch (error: any) {
-      console.error('Erro no processamento OCR via API do backend:', error);
-      Alert.alert('Erro OCR API Backend', `Ocorreu um erro: ${error.message || 'Verifique sua conexão e o servidor backend.'}`);
-    }
+    router.push({ pathname: '/farmacias', params: { medicationName } });
   };
 
   const handleCameraPress = async () => {
@@ -191,7 +324,7 @@ export default function MedicamentosScreen() {
     if (!permissionResult.granted) {
       const requestPermissionResult = await ImagePicker.requestCameraPermissionsAsync();
       if (!requestPermissionResult.granted) {
-        Alert.alert('Permissão Negada', 'Você precisa permitir o acesso à câmera para usar esta funcionalidade.');
+        Alert.alert('Permissão Negada', 'Você precisa permitir o acesso à câmera.');
         return;
       }
     }
@@ -203,8 +336,74 @@ export default function MedicamentosScreen() {
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      const imageUri = result.assets[0].uri;
-      await processImageForOCR(imageUri);
+      await processImageForOCR(result.assets[0].uri);
+    }
+  };
+
+  const processImageForOCR = async (uri: string) => {
+    try {
+      Alert.alert('Processando...', 'Verificando se o medicamento corresponde à sua prescrição.');
+      
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            resolve(reader.result.split(',')[1]);
+          } else {
+            reject(new Error('Falha ao converter imagem'));
+          }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      const result = await api.analyzeImage(base64);
+      
+      if (result.error) {
+        Alert.alert('Erro', result.error);
+        return;
+      }
+
+      if (result.data?.extractedText) {
+        const extractedText = result.data.extractedText;
+        await incrementUsage();
+        
+        // LOG DO TEXTO EXTRAÍDO PELO OCR
+        console.log('==================================================');
+        console.log('[OCR] TEXTO EXTRAÍDO DA IMAGEM:');
+        console.log(extractedText);
+        console.log('==================================================');
+        
+        const lowerText = extractedText.toLowerCase();
+        
+        // Verificar se algum medicamento da lista está no texto
+        let foundMed = null;
+        for (const med of medicationsList) {
+          if (lowerText.includes(med.name.toLowerCase())) {
+            foundMed = med;
+            break;
+          }
+        }
+
+        if (foundMed) {
+          Alert.alert(
+            '✓ Medicamento Correto!',
+            `O medicamento ${foundMed.name} corresponde à sua prescrição.`
+          );
+        } else {
+          Alert.alert(
+            '⚠️ Atenção',
+            'O medicamento fotografado não corresponde aos seus medicamentos pendentes. Verifique com cuidado.'
+          );
+        }
+      } else {
+        console.log('[OCR] Nenhum texto extraído da imagem');
+        Alert.alert('Não Reconhecido', 'Não foi possível identificar texto na imagem.');
+      }
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Falha ao processar imagem.');
     }
   };
 
@@ -214,31 +413,26 @@ export default function MedicamentosScreen() {
       return;
     }
 
-    let contentToSpeak = `Olá ${user.name}, `;
-    let medicationsFoundForSpeech = false;
+    let contentToSpeak = `Olá ${user?.name || 'usuário'}, `;
 
     if (medicationsList.length === 0) {
       contentToSpeak += "você já tomou todos os seus medicamentos por hoje!";
     } else {
-      contentToSpeak += "esses são seus remédios do dia. ";
+      contentToSpeak += "esses são seus remédios pendentes. ";
       const periods = ['MANHÃ', 'TARDE', 'NOITE'];
+      
       periods.forEach(period => {
-        const periodMedications = medicationsList.filter(med => getTimeOfDay(med.time) === period);
-        if (periodMedications.length > 0) {
-          medicationsFoundForSpeech = true;
+        const periodMeds = medicationsList.filter(med => getTimeOfDay(med.time) === period);
+        if (periodMeds.length > 0) {
           contentToSpeak += `Período da ${period.toLowerCase()}. `;
-          periodMedications.forEach(med => {
+          periodMeds.forEach(med => {
             contentToSpeak += `${med.name} ${med.dosage}, horário ${med.time}. `;
             if (med.instruction) {
-              contentToSpeak += `Instrução: ${med.instruction}. `;
+              contentToSpeak += `${med.instruction}. `;
             }
           });
         }
       });
-
-      if (!medicationsFoundForSpeech && medicationsList.length > 0) {
-        contentToSpeak = `Olá ${user.name}. Parece que não há medicamentos pendentes para os períodos de hoje ou já foram registrados.`;
-      }
     }
 
     Speech.speak(contentToSpeak, {
@@ -246,79 +440,179 @@ export default function MedicamentosScreen() {
       onStart: () => setIsSpeaking(true),
       onDone: () => setIsSpeaking(false),
       onStopped: () => setIsSpeaking(false),
-      onError: (error) => {
-        console.error('Erro ao reproduzir fala:', error);
-        setIsSpeaking(false);
-        Alert.alert("Erro na Leitura", "Não foi possível ler o conteúdo da tela.");
-      },
+      onError: () => setIsSpeaking(false),
     });
   };
 
-  const renderMedicationCard = (medication: typeof initialMedicationsData[0]) => {
-    const isFirstCardInList = medicationsList.length > 0 && medicationsList[0].id === medication.id;
-    const cardBackgroundColor = isFirstCardInList ? '#2196F3' : '#82BDFB';
-    const cardTextColor = isFirstCardInList ? '#FFFFFF' : '#004894'; // Texto principal no card
-    const cardSubTextColor = isFirstCardInList ? '#E0E0E0' : '#075E9B'; // Texto secundário (instrução)
-    const pillBorderColor = isFirstCardInList ? '#FFCD00' : '#FFCD00';
-    const iconTintColor = isFirstCardInList ? '#FFFFFF' : '#004894'; // Cor do ícone de pílula dentro do card
+  const speakMedication = (med: DisplayMedication) => {
+    Speech.stop();
+    let contentToSpeak = `${med.name} ${med.dosage || ''}. Horário: ${med.time}. `;
+    if (med.instruction) {
+      contentToSpeak += `${med.instruction}. `;
+    }
+    
+    Speech.speak(contentToSpeak, {
+      language: 'pt-BR',
+      onStart: () => setIsSpeaking(true),
+      onDone: () => setIsSpeaking(false),
+      onStopped: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+    });
+  };
+
+  const renderMedicationCard = (medication: DisplayMedication) => {
+    const isProcessing = processingDose === medication.id;
+    
+    // Cores baseadas no status
+    let cardBg = '#2196F3'; // pending - azul
+    let textColor = '#FFFFFF';
+    let subTextColor = '#E0E0E0';
+    let statusIcon = '';
+    let statusText = '';
+    
+    if (medication.status === 'taken') {
+      cardBg = '#4CAF50'; // verde
+      textColor = '#FFFFFF';
+      subTextColor = '#C8E6C9';
+      statusIcon = '✓';
+      statusText = 'Tomado';
+    } else if (medication.status === 'forgotten') {
+      cardBg = '#E53935'; // vermelho
+      textColor = '#FFFFFF';
+      subTextColor = '#FFCDD2';
+      statusIcon = '✗';
+      statusText = 'Esquecido';
+    }
 
     return (
-      <View style={[styles.medicationCard, { backgroundColor: cardBackgroundColor }]}>
+      <View style={[styles.medicationCard, { backgroundColor: cardBg }]}>
         <View style={styles.cardContentRow}>
           <ExpoImage 
             source={medication.image} 
-            style={[styles.cardMedicationIconLeft, { tintColor: iconTintColor }]} 
+            style={[styles.cardMedicationIconLeft, { tintColor: textColor }]} 
             contentFit="contain" 
           />
           <View style={styles.cardTextContainer}>
             <Text style={styles.medicationFullName}>
-              <Text style={[styles.medicationNamePart, { color: cardTextColor }]}>{medication.name} </Text>
-              <Text style={styles.medicationDosagePart}>{medication.dosage}</Text>
+              <Text style={[styles.medicationNamePart, { color: textColor }]}>{medication.name}</Text>
+              {medication.dosage ? (
+                <Text style={styles.medicationDosagePart}> {medication.dosage}</Text>
+              ) : null}
             </Text>
-            {medication.instruction && (
-              <Text style={[styles.medicationInstruction, { color: cardSubTextColor }]}>{medication.instruction}</Text>
-            )}
+            {medication.instruction ? (
+              <Text style={[styles.medicationInstruction, { color: subTextColor }]} numberOfLines={2}>
+                {medication.instruction}
+              </Text>
+            ) : null}
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {medication.status !== 'pending' ? (
+              <View style={styles.statusBadge}>
+                <Text style={styles.statusBadgeText}>{statusIcon}</Text>
+              </View>
+            ) : null}
+            <TouchableOpacity 
+              onPress={() => speakMedication(medication)}
+              style={{ marginLeft: 8 }}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel={`Ouvir detalhes de ${medication.name}`}
+            >
+              <Ionicons name="volume-high" size={28} color={textColor} />
+            </TouchableOpacity>
           </View>
         </View>
         
         <View style={styles.pillsVisualContainer}>
-          {Array.from({ length: 7 }).map((_, pillIndex) => (
-            <View
-              key={pillIndex}
-              style={[
-                styles.pillVisual,
-                { 
-                  backgroundColor: pillIndex < 3 ? '#FFCD00' : '#FFFFFF', // 3 amarelas, 4 brancas
-                  borderColor: pillBorderColor,
-                }
-              ]}
-            >
-              <View style={[styles.pillDivider, { backgroundColor: pillIndex < 3 ? '#DAA520' : '#C0C0C0' }]} /> 
-            </View>
-          ))}
+          {Array.from({ length: 7 }).map((_, i) => {
+            const dayHistory = medication.weekHistory?.[i];
+            const percentage = dayHistory?.percentage ?? 0;
+            const status = dayHistory?.status ?? 'future';
+            
+            // Cores baseadas no status e percentage
+            let pillBg = '#FFFFFF';
+            let pillBorder = '#D0D0D0';
+            let dividerColor = '#B0B0B0';
+            let fillHeight = '0%';
+            
+            if (status === 'complete') {
+              // Completo = totalmente amarelo
+              pillBg = '#FFCD00';
+              pillBorder = '#E5B800';
+              dividerColor = '#DAA520';
+              fillHeight = '100%';
+            } else if (status === 'partial') {
+              // Parcial = preenchimento proporcional
+              pillBorder = '#E5B800';
+              dividerColor = '#DAA520';
+              fillHeight = `${Math.round(percentage * 100)}%`;
+            }
+            // 'missed', 'pending' e 'future' permanecem brancos
+            
+            return (
+              <View
+                key={i}
+                style={[
+                  styles.pillVisual,
+                  { 
+                    backgroundColor: status === 'complete' ? pillBg : '#FFFFFF',
+                    borderColor: pillBorder,
+                    borderWidth: 1.5,
+                    overflow: 'hidden',
+                  }
+                ]}
+              >
+                {/* Preenchimento proporcional para partial */}
+                {status === 'partial' ? (
+                  <View 
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: `${Math.round(percentage * 100)}%` as any,
+                      backgroundColor: '#FFCD00',
+                    }} 
+                  />
+                ) : null}
+                <View style={[styles.pillDivider, { backgroundColor: dividerColor }]} />
+              </View>
+            );
+          })}
         </View>
 
-        <View style={styles.actionButtonsContainer}>
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.acabouButton]}
-            onPress={() => handleOutOfStock(medication.name)}
-          >
-            <Text style={styles.acabouButtonText}>Acabou :(</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.tomeiButton]}
-            onPress={() => handleTakeMedication(medication.id)}
-          >
-            <Text style={styles.tomeiButtonText}>Tomei!</Text>
-          </TouchableOpacity>
-        </View>
+        {medication.status === 'pending' ? (
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.esqueciButton]}
+              onPress={() => handleForgotten(medication)}
+            >
+              <Text style={styles.esqueciButtonText}>Esqueci</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.tomeiButton]}
+              onPress={() => handleTakeMedication(medication)}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <ActivityIndicator size="small" color="#004894" />
+              ) : (
+                <Text style={styles.tomeiButtonText}>Tomei!</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.statusContainer}>
+            <Text style={[styles.statusText, { color: textColor }]}>{statusText}</Text>
+          </View>
+        )}
       </View>
     );
   };
 
   return (
     <SafeAreaView style={styles.safeAreaContainer}>
-      <Header scrollY={scrollY} onReadPress={speakScreenContent} /> {/* << MODIFIED: Pass speakScreenContent */}
+      <Header scrollY={scrollY} onReadPress={speakScreenContent} onLogoutPress={handleLogout} />
       <Animated.ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingTop: initialContentPaddingTop }}
@@ -326,46 +620,76 @@ export default function MedicamentosScreen() {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: false }
         )}
-        scrollEventThrottle={16}>
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => loadMedications(true)}
+            tintColor="#004894"
+          />
+        }
+      >
         <View style={styles.medicationSection}>
           <View style={styles.customHeaderContent}>
             <Text style={styles.greetingText}>
-              Olá {user.name}, esses são seus remédios do dia
+              Olá {user?.name || 'usuário'}, esses são seus remédios do dia
             </Text>
             <TouchableOpacity style={styles.newCameraButton} onPress={handleCameraPress}>
               <ExpoImage source={cameraIcon} style={styles.newCameraIcon} contentFit="contain" />
-              <Text style={styles.newCameraButtonText}>VEJA AQUI SE ESTÁ TOMANDO O CERTO</Text>
+              <Text style={styles.newCameraButtonText}>VEJA SE ESTÁ TOMANDO O CERTO</Text>
             </TouchableOpacity>
           </View>
 
-          {['MANHÃ', 'TARDE', 'NOITE'].map(period => {
-            const periodMedications = medicationsList.filter(med => getTimeOfDay(med.time) === period);
-            if (periodMedications.length === 0) return null;
+          {isLoading ? (
+            <ActivityIndicator size="large" color="#004894" style={{ marginTop: 40 }} />
+          ) : !hasPrescription ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="document-text-outline" size={60} color="#B0BEC5" />
+              <Text style={styles.allMedicationsTakenText}>
+                Nenhum medicamento cadastrado
+              </Text>
+              <Text style={styles.emptyStateSubtext}>
+                Vá em Prescrição e escaneie sua receita médica para adicionar medicamentos
+              </Text>
+            </View>
+          ) : medicationsList.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.allMedicationsTakenText}>
+                Você já tomou todos os seus medicamentos por hoje! 🎉
+              </Text>
+              <Text style={styles.emptyStateSubtext}>
+                Puxe para baixo para atualizar
+              </Text>
+            </View>
+          ) : (
+            ['MANHÃ', 'TARDE', 'NOITE'].map(period => {
+              const periodMeds = medicationsList.filter(med => getTimeOfDay(med.time) === period);
+              if (periodMeds.length === 0) return null;
 
-            return (
-              <View key={period} style={styles.periodBlock}>
-                <View style={styles.periodHeader}>
-                  {period === 'MANHÃ' && <SunIcon />}
-                  {period === 'NOITE' && <MoonIcon />}
-                  <Text style={styles.periodTitle}>{period}</Text>
-                </View>
-                {periodMedications.map((med) => (
-                  // Container para Horário + Card
-                  <View key={med.id} style={styles.medicationItemContainer}>
-                    <View style={styles.timeAboveCardContainer}>
-                      <ExpoImage source={relogioIcon} style={styles.clockIconStyle} contentFit="contain" />
-                      <Text style={styles.timeAboveCardText}>{med.time}</Text>
-                    </View>
-                    {renderMedicationCard(med)}
+              return (
+                <View key={period} style={styles.periodBlock}>
+                  <View style={styles.periodHeader}>
+                    {period === 'MANHÃ' ? <SunIcon /> : null}
+                    {period === 'NOITE' ? <MoonIcon /> : null}
+                    {period === 'TARDE' ? (
+                      <View style={styles.periodIconView}>
+                        <ExpoImage source={solIcon} style={styles.svgIcon} contentFit="contain" />
+                      </View>
+                    ) : null}
+                    <Text style={styles.periodTitle}>{period}</Text>
                   </View>
-                ))}
-              </View>
-            );
-          })}
-           {medicationsList.length === 0 && (
-            <Text style={styles.allMedicationsTakenText}>
-              Você já tomou todos os seus medicamentos por hoje! 🎉
-            </Text>
+                  {periodMeds.map((med, index) => (
+                    <View key={`${med.id}-${med.time}-${index}`} style={styles.medicationItemContainer}>
+                      <View style={styles.timeAboveCardContainer}>
+                        <ExpoImage source={relogioIcon} style={styles.clockIconStyle} contentFit="contain" />
+                        <Text style={styles.timeAboveCardText}>{med.time}</Text>
+                      </View>
+                      {renderMedicationCard(med)}
+                    </View>
+                  ))}
+                </View>
+              );
+            })
           )}
         </View>
       </Animated.ScrollView>
@@ -408,31 +732,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 15,
-    shadowColor: 'rgba(0, 0, 0, 0.15)',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    elevation: 7,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
   newCameraIcon: {
-    width: 47,
-    height: 47,
+    width: 40,
+    height: 40,
     marginRight: 12,
     tintColor: '#004894',
   },
   newCameraButtonText: {
-    fontSize: 22, // << AUMENTADO
+    fontSize: 18,
     color: '#004894',
     fontWeight: 'bold',
     textAlign: 'center',
-    flexShrink: 1, // Permite que o texto quebre se necessário em telas menores
+    flexShrink: 1,
   },
   medicationSection: {
     paddingHorizontal: 20,
-    paddingBottom: 80,
+    paddingBottom: 100,
   },
   periodBlock: {
-    marginBottom: 10, // Reduzido espaço entre blocos de período
+    marginBottom: 10,
   },
   periodHeader: {
     flexDirection: 'row',
@@ -449,86 +773,84 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  svgIcon: { // NOVO estilo para os SVGs sol e lua
-    width: 26,
-    height: 26,
-    tintColor: '#FFCD00', // Cor amarela para o sol, pode ajustar para a lua se necessário
+  svgIcon: {
+    width: 22,
+    height: 22,
+    tintColor: '#FFCD00',
   },
-  svgIconLua: { // NOVO estilo para o SVG da lua
-    width: 26,
-    height: 26,
+  svgIconLua: {
+    width: 22,
+    height: 22,
   },
   periodTitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#074173',
   },
   medicationItemContainer: {
-    marginBottom: 20, // Espaço entre um conjunto (horário+card) e o próximo
-    alignItems: 'center', // Centraliza o card abaixo do horário
+    marginBottom: 20,
+    alignItems: 'center',
   },
   timeAboveCardContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8, 
-    marginRight: -250, // Mantido, mas pode precisar de ajuste dependendo do tamanho do ícone SVG
+    marginBottom: 8,
+    alignSelf: 'flex-end',
+    marginRight: 20,
   },
-  clockIconStyle: { // Ajustado para ExpoImage
-    width: 30, // Definir tamanho para o SVG
-    height: 30,
-    tintColor: '#074173', // Cor escura para o relógio
-    marginRight: 8,
+  clockIconStyle: {
+    width: 24,
+    height: 24,
+    tintColor: '#074173',
+    marginRight: 6,
   },
   timeAboveCardText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#074173', // Cor escura para o horário
+    color: '#074173',
   },
   medicationCard: {
     borderRadius: 12,
-    paddingVertical: 15, // Ajustado padding
+    paddingVertical: 15,
     paddingHorizontal: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.12,
     shadowRadius: 5,
     elevation: 4,
-    width: '100%', // O card ocupa a largura disponível no seu container
-    maxWidth: 400, // Limite para não ficar excessivamente largo em tablets
+    width: '100%',
+    maxWidth: 400,
   },
   cardContentRow: {
     flexDirection: 'row',
-    alignItems: 'center', // Alinha o ícone com o bloco de texto
+    alignItems: 'center',
     marginBottom: 10,
   },
   cardMedicationIconLeft: {
-    width: 48, // Tamanho do ícone
-    height: 48,
-    marginRight: 12, // Espaço para o texto
+    width: 44,
+    height: 44,
+    marginRight: 12,
   },
   cardTextContainer: {
-    flex: 1, // Permite que o texto ocupe o espaço restante
+    flex: 1,
   },
   medicationFullName: {
     flexDirection: 'row',
-    alignItems: 'baseline',
     flexWrap: 'wrap',
   },
   medicationNamePart: {
-    fontSize: 30, // Ajustado para caber melhor com o ícone
+    fontSize: 26,
     fontWeight: 'bold',
   },
   medicationDosagePart: {
-    fontSize: 27, // Ajustado
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#FFCD00',
-    marginLeft: 6,
   },
   medicationInstruction: {
-    fontSize: 22, // Ligeiramente menor
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '500',
     marginTop: 4,
-    marginBottom: 8,
   },
   pillsVisualContainer: {
     flexDirection: 'row',
@@ -537,34 +859,34 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   pillVisual: {
-    width: 24, // Ajustado
-    height: 24, // Ajustado
-    borderRadius: 99, // Mantido para forma de pílula mais arredondada
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     marginHorizontal: 3,
     borderWidth: 1.5,
-    overflow: 'hidden', // Importante para a linha não sair da pílula
-    justifyContent: 'center', // Para centralizar a linha se ela for menor
+    overflow: 'hidden',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  pillDivider: { // NOVO estilo para a linha da pílula
-    width: '120%', // Faz a linha ser maior que a pílula para dar efeito de corte diagonal
-    height: 2, // Espessura da linha
+  pillDivider: {
+    width: '120%',
+    height: 2,
     transform: [{ rotate: '45deg' }],
   },
   actionButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 15,
-    columnGap: 15,
+    marginTop: 12,
+    gap: 15,
   },
   actionButton: {
     borderRadius: 25,
-    paddingVertical: 12, // Ajustado
-    paddingHorizontal: 20, // Ajustado
-    minWidth: 130, // Ajustado
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    minWidth: 120,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 3,
+    elevation: 2,
   },
   tomeiButton: {
     backgroundColor: '#FFCD00',
@@ -572,7 +894,7 @@ const styles = StyleSheet.create({
   tomeiButtonText: {
     color: '#004894',
     fontWeight: 'bold',
-    fontSize: 24, // Ajustado
+    fontSize: 20,
   },
   acabouButton: {
     backgroundColor: '#FFFFFF',
@@ -581,13 +903,56 @@ const styles = StyleSheet.create({
   acabouButtonText: {
     color: '#004894',
     fontWeight: 'bold',
-    fontSize: 24, // Ajustado
+    fontSize: 20,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
   },
   allMedicationsTakenText: {
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
     color: '#074173',
-    marginTop: 30,
+    fontWeight: '600',
     paddingHorizontal: 20,
+  },
+  emptyStateSubtext: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#90A4AE',
+    marginTop: 10,
+  },
+  // Novos estilos para status
+  statusBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  statusBadgeText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  esqueciButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E53935',
+  },
+  esqueciButtonText: {
+    color: '#E53935',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  statusContainer: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  statusText: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });

@@ -1,6 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useState, useEffect } from 'react';
+import * as Speech from 'expo-speech';
 import {
+    Alert,
     Dimensions,
     SafeAreaView,
     ScrollView,
@@ -9,70 +12,176 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    ActivityIndicator,
 } from 'react-native';
+import { api } from '../services/api';
 
 const { width } = Dimensions.get('window');
 
 export default function RegistroPressaoScreen() {
   const router = useRouter();
+  const [pressao, setPressao] = useState('');
+  const [data, setData] = useState('');
+  const [hora, setHora] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleBack = () => {
     router.back();
   };
 
-  const handleAdd = () => {
-    console.log('Pressão adicionada');
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  useEffect(() => {
+    return () => { Speech.stop(); };
+  }, []);
+
+  const speakScreenContent = () => {
+    if (isSpeaking) {
+      Speech.stop();
+      setIsSpeaking(false);
+      return;
+    }
+
+    const content = "Registrar Pressão. Campos disponíveis: Pressão em mmHg, no formato números, barra e números, exemplo 120 barra 80. Data e Hora. Preencha os campos e toque em adicionar.";
+    Speech.speak(content, {
+      language: 'pt-BR',
+      onStart: () => setIsSpeaking(true),
+      onDone: () => setIsSpeaking(false),
+      onStopped: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+    });
+  };
+
+  const handleAdd = async () => {
+    if (!pressao.trim()) {
+      Alert.alert('Erro', 'Por favor, informe o valor da pressão.');
+      return;
+    }
+
+    // Parse pressure format: "120/80"
+    const parts = pressao.split('/');
+    if (parts.length !== 2) {
+      Alert.alert('Erro', 'Formato inválido. Use o formato: 120/80');
+      return;
+    }
+
+    const systolic = parseInt(parts[0].trim(), 10);
+    const diastolic = parseInt(parts[1].trim(), 10);
+
+    if (isNaN(systolic) || isNaN(diastolic) || systolic <= 0 || diastolic <= 0) {
+      Alert.alert('Erro', 'Valores de pressão inválidos.');
+      return;
+    }
+
+    // Parse date and time
+    let measuredAt: Date;
+    try {
+      const [day, month, year] = (data || new Date().toLocaleDateString('pt-BR')).split('/');
+      const [hours, minutes] = (hora || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })).split(':');
+      measuredAt = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hours), parseInt(minutes));
+    } catch {
+      measuredAt = new Date();
+    }
+
+    setIsLoading(true);
+    const result = await api.savePressureReading({
+      systolic,
+      diastolic,
+      measuredAt: measuredAt.toISOString(),
+    });
+    setIsLoading(false);
+
+    if (result.data) {
+      Alert.alert('Sucesso', 'Pressão registrada com sucesso!', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    } else {
+      Alert.alert('Erro', result.error || 'Não foi possível salvar a pressão.');
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Ícone de som */}
-        <View style={styles.soundIcon}>
-          <Ionicons name="volume-high" size={50} color="#003164" />
-        </View>
+        <TouchableOpacity 
+          style={styles.soundIcon}
+          onPress={speakScreenContent}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Ouvir instruções da tela"
+        >
+          <Ionicons name="volume-high" size={50} color="#003164" accessible={false} importantForAccessibility="no" />
+        </TouchableOpacity>
 
         {/* Título */}
-        <Text style={styles.title}>REGISTRAR PRESSÃO</Text>
+        <Text style={styles.title} accessible={true} accessibilityRole="header">REGISTRAR PRESSÃO</Text>
 
         {/* Campo Pressão */}
-        <Text style={styles.label}>Pressão (mmHg)</Text>
+        <Text style={styles.label} importantForAccessibility="no">Pressão (mmHg)</Text>
         <TextInput
           style={styles.input}
-          placeholder="Escreva aqui apenas os números ex: 120/80"
+          placeholder="Ex: 120/80"
           placeholderTextColor="#666"
-          multiline
-          textAlignVertical="top"
+          value={pressao}
+          onChangeText={setPressao}
+          accessible={true}
+          accessibilityLabel="Campo de Pressão em milímetros de mercúrio"
+          accessibilityHint="Digite sua pressão no formato número, barra e número. Exemplo: 120 barra 80"
         />
 
         {/* Campo Data */}
-        <Text style={styles.label}>Data</Text>
+        <Text style={styles.label} importantForAccessibility="no">Data</Text>
         <TextInput
           style={styles.input}
-          placeholder="ex: 08/05/2025"
+          placeholder={new Date().toLocaleDateString('pt-BR')}
           placeholderTextColor="#666"
-          multiline
-          textAlignVertical="top"
+          value={data}
+          onChangeText={setData}
+          accessible={true}
+          accessibilityLabel="Campo de Data da medição"
+          accessibilityHint="Digite a data em que essa pressão foi aferida"
         />
 
         {/* Campo Hora */}
-        <Text style={styles.label}>Hora</Text>
+        <Text style={styles.label} importantForAccessibility="no">Hora</Text>
         <TextInput
           style={styles.input}
-          placeholder="ex: 18:33"
+          placeholder={new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           placeholderTextColor="#666"
-          multiline
-          textAlignVertical="top"
+          value={hora}
+          onChangeText={setHora}
+          accessible={true}
+          accessibilityLabel="Campo de Hora da medição"
         />
 
         {/* Botões */}
         <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Text style={styles.backText}>voltar</Text>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBack}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Voltar"
+            accessibilityHint="Toca duas vezes para voltar à tela anterior"
+          >
+            <Text style={styles.backText} importantForAccessibility="no">voltar</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
-            <Text style={styles.addText}>adicionar</Text>
+          <TouchableOpacity 
+            style={[styles.addButton, isLoading ? { opacity: 0.7 } : null]} 
+            onPress={handleAdd}
+            disabled={isLoading}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Salvar medição"
+            accessibilityState={{ disabled: isLoading }}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#003164" />
+            ) : (
+              <Text style={styles.addText} importantForAccessibility="no">adicionar</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
