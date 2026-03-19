@@ -15,8 +15,10 @@ import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import MarkdownDisplay from 'react-native-markdown-display'; 
+import FeedbackPopup from '@/components/FeedbackPopup';
+import { useFeatureFeedback } from '@/hooks/useFeatureFeedback';
 
-const API_URL = 'https://cuidarecife-api.onrender.com/chat'; // <<< IMPORTANT: Configure this
+const API_URL = 'http://localhost:3001/chat'; // <<< IMPORTANT: Configure this
 
 interface Message {
   id: string;
@@ -28,13 +30,16 @@ export default function AjudaScreen() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'initial-ai-message',
-      text: 'Olá! Sou Doc, seu assistente de saúde. Como posso ajudar você hoje?',
+      text: 'Olá! Sou a Doc, sua assistente de saúde. Como posso ajudar você hoje?',
       sender: 'ai',
     },
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [activeMessageToRate, setActiveMessageToRate] = useState<Message | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+  
+  const { showFeedback, incrementUsage, closeFeedback } = useFeatureFeedback("CHATBOT", 3);
 
   const roboImage = require('@/assets/images/robo.png');
 
@@ -89,6 +94,9 @@ export default function AjudaScreen() {
           sender: 'ai',
         };
         setMessages((prevMessages) => [...prevMessages, aiReply]);
+        
+        // Trigger usage increment after a successful response
+        await incrementUsage();
       } else {
         const responseText = await response.text();
         console.error('Unexpected content type from backend:', contentType, 'Response text:', responseText);
@@ -107,7 +115,7 @@ export default function AjudaScreen() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0} // Ajustado o offset
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0} 
     >
       <Stack.Screen options={{ title: 'Ajuda - Chat Saúde' }} />
       <ScrollView
@@ -135,13 +143,24 @@ export default function AjudaScreen() {
               {msg.sender === 'user' ? (
                 <Text style={styles.userMessageText}>{msg.text}</Text>
               ) : (
-                <MarkdownDisplay
-                  style={{
-                    body: styles.aiMessageText, // Estilo base para o corpo do markdown
-                  }}
-                >
-                  {msg.text}
-                </MarkdownDisplay>
+                <View>
+                  <MarkdownDisplay
+                    style={{
+                      body: styles.aiMessageText, 
+                    }}
+                  >
+                    {msg.text}
+                  </MarkdownDisplay>
+                  {msg.id !== 'initial-ai-message' && (
+                    <TouchableOpacity 
+                      style={styles.rateMessageButton} 
+                      onPress={() => setActiveMessageToRate(msg)}
+                    >
+                      <Ionicons name="thumbs-up-outline" size={14} color="#003164" />
+                      <Text style={styles.rateMessageText}>Avaliar resposta</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               )}
             </View>
           </View>
@@ -172,6 +191,22 @@ export default function AjudaScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      <FeedbackPopup 
+        visible={showFeedback}
+        question="Quanto a nossa conversa agora tirou as suas dúvidas?"
+        featureName="CHATBOT"
+        onClose={closeFeedback}
+      />
+
+      {/* Popup for individual messages */}
+      <FeedbackPopup 
+        visible={!!activeMessageToRate}
+        question="Como você avalia essa resposta específica?"
+        featureName="CHATBOT_MSG"
+        details={activeMessageToRate?.text}
+        onClose={() => setActiveMessageToRate(null)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -267,4 +302,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  rateMessageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    backgroundColor: '#F0F0F0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  rateMessageText: {
+    fontSize: 12,
+    color: '#003164',
+    marginLeft: 4,
+  }
 });

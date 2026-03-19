@@ -5,6 +5,8 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech'; // << ADDED: Import Expo Speech
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import FeedbackPopup from '@/components/FeedbackPopup';
+import { useFeatureFeedback } from '@/hooks/useFeatureFeedback';
 
 // Ícones (SVG já importados no seu código original)
 const placeholderMedicationIcon = require('@/assets/images/pilula.svg');
@@ -54,6 +56,8 @@ export default function MedicamentosScreen() {
   );
   const [isSpeaking, setIsSpeaking] = useState(false); // << ADDED: State for speech status
 
+  const { showFeedback, incrementUsage, closeFeedback } = useFeatureFeedback("OCR", 3);
+
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const headerMaxHeight = 200;
@@ -92,7 +96,7 @@ export default function MedicamentosScreen() {
 
   const processImageForOCR = async (uri: string) => {
     console.log('Imagem para processar via API do backend:', uri);
-    const API_BASE_URL = 'https://cuidarecife-api.onrender.com';
+    const API_BASE_URL = 'http://localhost:3001';
     const BACKEND_API_URL = `${API_BASE_URL}/vision/analyze-image`;
 
     try {
@@ -136,6 +140,8 @@ export default function MedicamentosScreen() {
         if (result.extractedText) {
           const extractedText = result.extractedText;
           console.log('Texto Extraído (Backend API):', extractedText);
+          
+          await incrementUsage(); // Trigger OCR usage count
 
           const normalizedExtractedText = extractedText.toLowerCase().replace(/\s+/g, ' ').trim();
           console.log('Texto Normalizado:', normalizedExtractedText);
@@ -363,6 +369,12 @@ export default function MedicamentosScreen() {
           )}
         </View>
       </Animated.ScrollView>
+      <FeedbackPopup 
+        visible={showFeedback}
+        question="A câmera do celular ajudou você a ler o seu remédio hoje?"
+        featureName="OCR"
+        onClose={closeFeedback}
+      />
     </SafeAreaView>
   );
 }
