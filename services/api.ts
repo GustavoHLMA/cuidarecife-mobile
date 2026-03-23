@@ -113,12 +113,12 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
-        return { error: data.error || 'Request failed' };
+        return { error: data.error || 'A requisição falhou' };
       }
 
       return { data };
     } catch (error) {
-      return { error: 'Network error. Please check your connection.' };
+      return { error: 'Erro de rede. Por favor, verifique sua conexão e tente novamente.' };
     }
   }
 
@@ -325,6 +325,13 @@ class ApiService {
   }>> {
     const query = location ? `?lat=${location.lat}&lng=${location.lng}` : '';
     return this.request(`/pharmacies${query}`);
+  }
+
+  async submitMobileFeedback(feature: string, rating: number, details?: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request('/feedback/mobile', {
+      method: 'POST',
+      body: JSON.stringify({ feature, rating, details }),
+    });
   }
 }
 

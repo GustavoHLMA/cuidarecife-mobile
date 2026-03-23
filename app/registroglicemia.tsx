@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import * as Speech from 'expo-speech';
 import {
-    Alert,
     Dimensions,
     Pressable,
     SafeAreaView,
@@ -16,6 +15,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { api } from '../services/api';
+import { useUI } from '@/contexts/UIContext';
 
 const { width } = Dimensions.get('window');
 
@@ -27,6 +27,7 @@ export default function RegistroGlicemiaScreen() {
   const [antesRefeicao, setAntesRefeicao] = useState(false);
   const [aposRefeicao, setAposRefeicao] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { showToast, showModal } = useUI();
 
   const handleBack = () => {
     router.back();
@@ -57,13 +58,13 @@ export default function RegistroGlicemiaScreen() {
 
   const handleAdd = async () => {
     if (!glicemia.trim()) {
-      Alert.alert('Erro', 'Por favor, informe o valor da glicemia.');
+      showToast('Esqueceu de anotar o valor da glicemia?', 'error');
       return;
     }
 
     const value = parseInt(glicemia, 10);
     if (isNaN(value) || value <= 0) {
-      Alert.alert('Erro', 'Valor de glicemia inválido.');
+      showToast('Hmm, esse valor da glicemia parece estranho. Pode conferir?', 'error');
       return;
     }
 
@@ -90,11 +91,11 @@ export default function RegistroGlicemiaScreen() {
     setIsLoading(false);
 
     if (result.data) {
-      Alert.alert('Sucesso', 'Glicemia registrada com sucesso!', [
+      showModal('Muito bem! 👍', 'Sua glicemia de hoje foi anotada.', [
         { text: 'OK', onPress: () => router.back() }
       ]);
     } else {
-      Alert.alert('Erro', result.error || 'Não foi possível salvar a glicemia.');
+      showModal('Ops!', result.error || 'Não conseguimos guardar sua glicemia agora. Pode tentar de novo?');
     }
   };
 

@@ -3,7 +3,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-  Alert,
   Animated,
   FlatList,
   Image,
@@ -15,6 +14,7 @@ import {
   View
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useUI } from '@/contexts/UIContext';
 
 const cuidadosData = [
   {
@@ -36,13 +36,14 @@ export default function CuidadosScreen() {
   const router = useRouter();
   const scrollY = useRef(new Animated.Value(0)).current;
   const [searchTerm, setSearchTerm] = useState('');
+  const { showModal } = useUI();
 
   const filteredData = cuidadosData.filter(item =>
     item.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleLogout = () => {
-    Alert.alert(
+    showModal(
       'Sair do aplicativo',
       'Tem certeza que deseja sair?',
       [
@@ -63,7 +64,7 @@ export default function CuidadosScreen() {
     if (link) {
       router.push({ pathname: '/conteudo', params: { url: link } });
     } else {
-      Alert.alert('Conteúdo indisponível', 'Este conteúdo ainda está sendo preparado.');
+      showModal('Ainda não temos', 'Esse material ainda está sendo preparado com muito carinho para você.');
     }
   };
 

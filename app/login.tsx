@@ -3,7 +3,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { useUI } from '@/contexts/UIContext';
 
 export default function LoginScreen() {
   const params = useLocalSearchParams<{ mode?: string }>();
@@ -27,6 +27,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const { login, register } = useAuth();
+  const { showToast, showModal } = useUI();
 
   useEffect(() => {
     setIsLogin(params.mode !== 'register');
@@ -34,17 +35,17 @@ export default function LoginScreen() {
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      showToast('Opa! Faltou preencher alguma coisa. Pode dar uma olhadinha?', 'error');
       return;
     }
 
     if (!isLogin && !name.trim()) {
-      Alert.alert('Erro', 'Por favor, informe seu nome.');
+      showToast('Como devemos te chamar? Por favor, digite seu nome.', 'error');
       return;
     }
 
     if (!isLogin && !neighborhood.trim()) {
-      Alert.alert('Erro', 'Por favor, informe seu bairro para encontrar farmácias próximas.');
+      showToast('Pode me dizer o seu bairro? Assim achamos o posto mais perto de você.', 'error');
       return;
     }
 
@@ -61,10 +62,16 @@ export default function LoginScreen() {
       if (result.success) {
         router.replace('/(tabs)/medicamentos');
       } else {
-        Alert.alert('Erro', result.error || 'Erro ao fazer login.');
+        let errorMsg = result.error || 'Não conseguimos entrar na sua conta agora.';
+        if (errorMsg === 'Invalid email or password' || errorMsg === 'Email ou senha inválidos') {
+          errorMsg = 'Poxa, parece que o email ou a senha estão incorretos. Que tal tentar novamente?';
+        } else if (errorMsg === 'Invalid email format') {
+          errorMsg = 'O formato do email parece estranho. Pode dar uma olhadinha e conferir se está tudo certo?';
+        }
+        showModal('Eita!', errorMsg);
       }
     } catch (error) {
-      Alert.alert('Erro', 'Ocorreu um erro. Tente novamente.');
+      showModal('Eita!', 'Tivemos um probleminha. Pode tentar de novo?');
     } finally {
       setIsLoading(false);
     }

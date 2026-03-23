@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import * as Speech from 'expo-speech';
 import {
-    Alert,
     Dimensions,
     SafeAreaView,
     ScrollView,
@@ -15,6 +14,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { api } from '../services/api';
+import { useUI } from '@/contexts/UIContext';
 
 const { width } = Dimensions.get('window');
 
@@ -24,6 +24,7 @@ export default function RegistroPressaoScreen() {
   const [data, setData] = useState('');
   const [hora, setHora] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { showToast, showModal } = useUI();
 
   const handleBack = () => {
     router.back();
@@ -54,14 +55,14 @@ export default function RegistroPressaoScreen() {
 
   const handleAdd = async () => {
     if (!pressao.trim()) {
-      Alert.alert('Erro', 'Por favor, informe o valor da pressão.');
+      showToast('Esqueceu de anotar o valor da pressão?', 'error');
       return;
     }
 
     // Parse pressure format: "120/80"
     const parts = pressao.split('/');
     if (parts.length !== 2) {
-      Alert.alert('Erro', 'Formato inválido. Use o formato: 120/80');
+      showToast('Opa, o formato precisa ser igual a esse: 120/80', 'error');
       return;
     }
 
@@ -69,7 +70,7 @@ export default function RegistroPressaoScreen() {
     const diastolic = parseInt(parts[1].trim(), 10);
 
     if (isNaN(systolic) || isNaN(diastolic) || systolic <= 0 || diastolic <= 0) {
-      Alert.alert('Erro', 'Valores de pressão inválidos.');
+      showToast('Hmm, esses valores de pressão parecem estranhos. Pode dar uma olhadinha?', 'error');
       return;
     }
 
@@ -92,11 +93,11 @@ export default function RegistroPressaoScreen() {
     setIsLoading(false);
 
     if (result.data) {
-      Alert.alert('Sucesso', 'Pressão registrada com sucesso!', [
+      showModal('Muito bem! 👍', 'Sua pressão de hoje foi anotada.', [
         { text: 'OK', onPress: () => router.back() }
       ]);
     } else {
-      Alert.alert('Erro', result.error || 'Não foi possível salvar a pressão.');
+      showModal('Ops!', result.error || 'Não conseguimos guardar sua pressão agora. Pode tentar de novo?');
     }
   };
 

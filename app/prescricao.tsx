@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
+import { useUI } from '@/contexts/UIContext';
 
 interface Medication {
   id?: string;
@@ -47,6 +48,7 @@ export default function PrescricaoScreen() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [prescription, setPrescription] = useState<Prescription | null>(null);
   const { user } = useAuth();
+  const { showModal, showToast } = useUI();
 
   // Modal de edição de medicamentos extraídos
   const [showEditModal, setShowEditModal] = useState(false);
@@ -80,13 +82,13 @@ export default function PrescricaoScreen() {
 
   // Função para capturar/selecionar imagem
   const handleScanPrescription = async () => {
-    Alert.alert(
-      'Escanear Prescrição',
-      'Como deseja adicionar a prescrição?',
+    showModal(
+      'Adicionar Receita',
+      'De onde você quer pegar a foto da receita?',
       [
-        { text: 'Câmera', onPress: () => pickImage('camera') },
-        { text: 'Galeria', onPress: () => pickImage('gallery') },
-        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Tirar Foto', onPress: () => pickImage('camera') },
+        { text: 'Escolher da Galeria', onPress: () => pickImage('gallery') },
+        { text: 'Voltar', style: 'cancel' },
       ]
     );
   };
@@ -98,7 +100,7 @@ export default function PrescricaoScreen() {
       if (source === 'camera') {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (!permission.granted) {
-          Alert.alert('Permissão Negada', 'Precisamos de acesso à câmera.');
+          showModal('Câmera Bloqueada', 'Para tirar a foto, precisamos que você libere o uso da câmera.');
           return;
         }
         result = await ImagePicker.launchCameraAsync({
@@ -108,7 +110,7 @@ export default function PrescricaoScreen() {
       } else {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
-          Alert.alert('Permissão Negada', 'Precisamos de acesso à galeria.');
+          showModal('Galeria Bloqueada', 'Para buscar a foto, precisamos que você libere o acesso da galeria do seu celular.');
           return;
         }
         result = await ImagePicker.launchImageLibraryAsync({
@@ -124,7 +126,7 @@ export default function PrescricaoScreen() {
       }
     } catch (error) {
       console.error('Erro ao selecionar imagem:', error);
-      Alert.alert('Erro', 'Não foi possível processar a imagem.');
+      showToast('A foto da receita não carregou direito. Pode tentar de novo?', 'error');
     }
   };
 
@@ -150,7 +152,7 @@ export default function PrescricaoScreen() {
       const result = await api.extractMedicationsFromImage(base64);
 
       if (result.error) {
-        Alert.alert('Erro na Extração', result.error);
+        showModal('Poxa, o Doc ficou confuso', result.error || 'A foto ficou difícil de ler. Pode tentar mandar outra imagem?');
         return;
       }
 
@@ -184,28 +186,24 @@ export default function PrescricaoScreen() {
         setExtractedText(result.data?.extractedText || '');
 
         if (hasConflict && medications.length > 0) {
-          Alert.alert(
+          showModal(
             'Medicamentos Substituídos',
-            `Alguns medicamentos lidos já estavam na sua prescrição e foram substituídos pela nova dosagem/horário:\n\n${conflictDetails}\nRevise os itens antes de salvar.`,
+            `Notei que alguns remédios já estavam listados e eu apenas os atualizei:\n\n${conflictDetails}\nVerifique se está tudo certinho antes de guardar a receita.`,
             [
-              { text: 'Entendi', onPress: () => setShowEditModal(true) }
+              { text: 'Vamos lá', onPress: () => setShowEditModal(true) }
             ]
           );
         } else {
           setShowEditModal(true);
         }
       } else {
-        Alert.alert(
-          'Nenhum Medicamento Encontrado',
-          'Não foi possível identificar medicamentos na imagem. Tente fotografar novamente.',
-          [
-            { text: 'OK' },
-            { text: 'Ver Texto', onPress: () => Alert.alert('Texto Extraído', result.data?.extractedText || 'Nenhum texto') },
-          ]
+        showModal(
+          'Receita em branco?',
+          'O Doc não conseguiu achar nomes de remédios nessa foto. Tem certeza que a foto ficou nítida?'
         );
       }
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Falha ao processar a imagem.');
+      showModal('Opa!', error.message || 'Deu um probleminha para ler a foto agora.');
     } finally {
       setIsExtracting(false);
     }
@@ -214,7 +212,7 @@ export default function PrescricaoScreen() {
   const handleEditPrescription = () => {
     // Clona os medicamentos atuais para edição
     if (medications.length === 0) {
-      Alert.alert('Atenção', 'Você ainda não possui medicamentos para editar. Adicione uma nova prescrição.');
+      showModal('Lista Vazia', 'Adicione a sua receita primeiro para podermos ver os seus remédios.');
       return;
     }
     
@@ -260,15 +258,15 @@ export default function PrescricaoScreen() {
   // Salvar prescrição
   const savePrescription = async () => {
     if (extractedMedications.length === 0) {
-      Alert.alert('Atenção', 'Adicione pelo menos um medicamento.');
+      showToast('A receita precisa ter pelo menos um remédio, tá?', 'error');
       return;
     }
 
     for (const med of extractedMedications) {
       if (!med.name.trim()) {
-        Alert.alert('Atenção', 'Todos os medicamentos precisam de um nome.');
+        showToast('Eita, faltou colocar o nome de algum remédio!', 'error');
         return;
-      }
+      } 
     }
 
     setIsLoading(true);
@@ -286,16 +284,16 @@ export default function PrescricaoScreen() {
       });
 
       if (result.error) {
-        Alert.alert('Erro', result.error);
+        showModal('Ops!', result.error || 'Deu um probleminha ao salvar a receita.');
         return;
       }
 
-      Alert.alert('Sucesso', 'Prescrição salva! Os medicamentos agora aparecem na aba Medicamentos.');
+      showModal('Tudo certo! 🎉', 'Sua receita foi salva. O Doc já organizou os remédios na sua lista do dia a dia.');
       setShowEditModal(false);
       setExtractedMedications([]);
       await loadPrescription();
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Falha ao salvar prescrição.');
+      showModal('Ops!', error.message || 'Tivemos um problema. Pode tentar guardar a receita de novo?');
     } finally {
       setIsLoading(false);
     }
@@ -351,14 +349,14 @@ export default function PrescricaoScreen() {
       if (result.data?.analysisResult) {
         Speech.stop();
         Speech.speak(result.data.analysisResult, { language: 'pt-BR' });
-        Alert.alert("Análise da Prescrição", result.data.analysisResult);
+        showModal("Dica do Doc 👨‍⚕️", result.data.analysisResult);
       } else {
         console.error('[Verificação] Erro:', result.error);
-        Alert.alert("Erro na Verificação", result.error || "Erro desconhecido ao verificar prescrição.");
+        showModal("Desculpe", result.error || "O Doc não conseguiu ler essa receita agora.");
       }
     } catch (error: any) {
       console.error('[Verificação] Exceção:', error);
-      Alert.alert("Erro de Conexão", `Falha na comunicação: ${error.message || 'Verifique sua internet'}`);
+      showModal("Sinal Fraco", `A internet não conectou: ${error.message || 'Verifique sua conexão WiFi ou celular'}`);
     }
     setIsVerifying(false);
   };
