@@ -18,7 +18,7 @@
    - **Assiduidade do tratamento** com visualização do progresso da medicação e opção de sinalizar se tiver acabado (podendo notificar a agentes comunitários de saúde em caso de pacientes domiciliados)
 
 2. **Registro de pressão e glicemia**
-   - **Adição de aferições** de pressão, MRPA e glicemia, com opção de baixar histórico de entradas.
+   - **Adição de aferições** para pressão, MRPA e glicemia, com opção de baixar histórico de entradas.
    - **Instruções detalhadas** sobre como realizar os procedimentos de aferição de pressão e medição de glicemia.
 
 3. **Assistente IA**
