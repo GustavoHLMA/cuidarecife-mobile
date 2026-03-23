@@ -92,7 +92,7 @@ EXPO_PUBLIC_API_URL_PROD=https://cuidarecife-api.onrender.com
 npm run dev:local
 ```
 - Conecta ao backend rodando localmente
-- URL: `http://000.000.0.0:3001` (ajuste para seu IP)
+- URL: `http://000.000.0.0:3001` (ajuste para o IP de sua máquina)
 
 ### Desenvolvimento (API de produção)
 ```bash
