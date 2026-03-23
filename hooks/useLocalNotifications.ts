@@ -80,6 +80,7 @@ const getOffsetTime = (hour: number, minute: number, offsetMinutes: number) => {
 };
 
 export const scheduleMedicationAlerts = async (medication: any) => {
+  if (Platform.OS === 'web') return;
   if (!medication.times) return;
 
   // Tentar capturar array se estiver em string JSON
@@ -132,6 +133,7 @@ export const scheduleMedicationAlerts = async (medication: any) => {
 };
 
 export const cancelMedicationAlerts = async (medicationId: string, timeString?: string) => {
+  if (Platform.OS === 'web') return;
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
 
   const notificationsToCancel = scheduled.filter(notif => {
@@ -148,6 +150,7 @@ export const cancelMedicationAlerts = async (medicationId: string, timeString?: 
 };
 
 export const scheduleFollowupMeasurement = async (type: 'glucose' | 'pressure', hoursOffset: number = 2) => {
+  if (Platform.OS === 'web') return;
   const triggerTime = new Date();
   triggerTime.setHours(triggerTime.getHours() + hoursOffset);
 
@@ -172,6 +175,7 @@ export const scheduleFollowupMeasurement = async (type: 'glucose' | 'pressure', 
 };
 
 export const scheduleRefillAlert = async (medicationName: string, daysLeft: number = 3) => {
+  if (Platform.OS === 'web') return;
   // Limpar alertas antigos de refill deste medicamento para não sobrepor
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   for (const notif of scheduled) {

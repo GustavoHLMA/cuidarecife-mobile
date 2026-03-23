@@ -6,6 +6,8 @@ import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import FeedbackPopup from '@/components/FeedbackPopup';
+import { useFeatureFeedback } from '@/hooks/useFeatureFeedback';
 import { 
   Alert, 
   Animated, 
@@ -99,6 +101,7 @@ export default function MedicamentosScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [processingDose, setProcessingDose] = useState<string | null>(null);
+  const { showFeedback, incrementUsage, closeFeedback } = useFeatureFeedback("OCR", 3);
 
   const headerMaxHeight = 200;
   const profileImageOverflowHeight = 70;
@@ -330,31 +333,37 @@ export default function MedicamentosScreen() {
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.7,
+      base64: true,
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      await processImageForOCR(result.assets[0].uri);
+      const asset = result.assets[0];
+      await processImageForOCR(asset.uri, asset.base64);
     }
   };
 
-  const processImageForOCR = async (uri: string) => {
+  const processImageForOCR = async (uri: string, base64Data?: string | null) => {
     try {
       Alert.alert('Processando...', 'Verificando se o medicamento corresponde à sua prescrição.');
       
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === 'string') {
-            resolve(reader.result.split(',')[1]);
-          } else {
-            reject(new Error('Falha ao converter imagem'));
-          }
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      let base64 = base64Data;
+      
+      if (!base64) {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            if (typeof reader.result === 'string') {
+              resolve(reader.result.split(',')[1]);
+            } else {
+              reject(new Error('Falha ao converter imagem'));
+            }
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
 
       const result = await api.analyzeImage(base64);
       
@@ -365,6 +374,7 @@ export default function MedicamentosScreen() {
 
       if (result.data?.extractedText) {
         const extractedText = result.data.extractedText;
+        await incrementUsage(); // Incrementar uso do OCR para feedback
         
         // LOG DO TEXTO EXTRAÍDO PELO OCR
         console.log('==================================================');
@@ -689,6 +699,12 @@ export default function MedicamentosScreen() {
           )}
         </View>
       </Animated.ScrollView>
+      <FeedbackPopup 
+        visible={showFeedback}
+        question="A câmera do celular ajudou você a ler o seu remédio hoje?"
+        featureName="OCR"
+        onClose={closeFeedback}
+      />
     </SafeAreaView>
   );
 }

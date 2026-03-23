@@ -326,6 +326,13 @@ class ApiService {
     const query = location ? `?lat=${location.lat}&lng=${location.lng}` : '';
     return this.request(`/pharmacies${query}`);
   }
+
+  async submitMobileFeedback(feature: string, rating: number, details?: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request('/feedback/mobile', {
+      method: 'POST',
+      body: JSON.stringify({ feature, rating, details }),
+    });
+  }
 }
 
 export const api = new ApiService();

@@ -14,9 +14,11 @@ import {
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
-import MarkdownDisplay from 'react-native-markdown-display'; 
+import { Markdown } from '@docren/react-native-markdown';
 import { api } from '@/services/api';
 import * as Speech from 'expo-speech';
+import FeedbackPopup from '@/components/FeedbackPopup';
+import { useFeatureFeedback } from '@/hooks/useFeatureFeedback';
 
 interface Message {
   id: string;
@@ -37,6 +39,8 @@ export default function AjudaScreen() {
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
+  const [activeMessageToRate, setActiveMessageToRate] = useState<Message | null>(null);
+  const { showFeedback, incrementUsage, closeFeedback } = useFeatureFeedback("CHATBOT", 3);
 
   const roboImage = require('@/assets/images/robo.png');
 
@@ -129,6 +133,7 @@ export default function AjudaScreen() {
           sender: 'ai',
         };
         setMessages((prevMessages) => [...prevMessages, aiReply]);
+        await incrementUsage(); // Abre o popup a cada 3 respostas do bot
       } else {
         throw new Error('Resposta inesperada do servidor.');
       }
@@ -176,13 +181,23 @@ export default function AjudaScreen() {
               {msg.sender === 'user' ? (
                 <Text style={styles.userMessageText} importantForAccessibility="no">{msg.text}</Text>
               ) : (
-                <MarkdownDisplay
-                  style={{
-                    body: styles.aiMessageText,
-                  }}
-                >
-                  {msg.text}
-                </MarkdownDisplay>
+                <View>
+                  <Markdown
+                    styles={{
+                      text: styles.aiMessageText,
+                    }}
+                    markdown={msg.text}
+                  />
+                  {msg.id !== 'initial-ai-message' && (
+                    <TouchableOpacity 
+                      style={styles.rateMessageButton} 
+                      onPress={() => setActiveMessageToRate(msg)}
+                    >
+                      <Ionicons name="thumbs-up-outline" size={14} color="#003164" />
+                      <Text style={styles.rateMessageText}>Avaliar resposta</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               )}
             </View>
             {/* Botão de ouvir na mensagem da IA */}
@@ -255,6 +270,19 @@ export default function AjudaScreen() {
           )}
         </TouchableOpacity>
       </View>
+      <FeedbackPopup 
+        visible={showFeedback}
+        question="Quanto a nossa conversa agora tirou as suas dúvidas?"
+        featureName="CHATBOT"
+        onClose={closeFeedback}
+      />
+      <FeedbackPopup 
+        visible={!!activeMessageToRate}
+        question="Como você avalia essa resposta específica?"
+        featureName="CHATBOT_MSG"
+        details={activeMessageToRate?.text}
+        onClose={() => setActiveMessageToRate(null)}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -370,4 +398,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  rateMessageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    backgroundColor: '#F0F0F0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  rateMessageText: {
+    fontSize: 12,
+    color: '#003164',
+    marginLeft: 4,
+  }
 });
