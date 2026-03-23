@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { WebView } from 'react-native-webview';
 
@@ -24,11 +24,20 @@ export default function ConteudoScreen() {
                 <Text style={styles.headerTitle} accessible={true} accessibilityRole="header">Conteúdo</Text>
                 <View style={{ width: 40 }} />
             </View>
-            <WebView
-                source={{ uri: url }}
-                style={styles.webview}
-                startInLoadingState
-            />
+            {Platform.OS === 'web' ? (
+                <iframe
+                    src={url}
+                    style={{ flex: 1, border: 'none', width: '100%', height: '100%' }}
+                    title="Conteúdo"
+                    allowFullScreen
+                />
+            ) : (
+                <WebView
+                    source={{ uri: url }}
+                    style={styles.webview}
+                    startInLoadingState
+                />
+            )}
         </SafeAreaView>
     );
 }
