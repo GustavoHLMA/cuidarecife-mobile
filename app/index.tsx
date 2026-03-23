@@ -1,6 +1,7 @@
 import { ThemedText } from '@/components/ThemedText';
 import { useRouter } from 'expo-router';
-import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function WelcomeScreen() {
@@ -19,6 +20,7 @@ export default function WelcomeScreen() {
       <Image
         source={require('@/assets/images/cuidarecife.png')}
         style={styles.logo}
+        contentFit="contain"
         accessible={true}
         accessibilityRole="image"
         accessibilityLabel="Logomarca do Cuida Recife"
@@ -37,6 +39,7 @@ export default function WelcomeScreen() {
       <Image
         source={require('@/assets/images/arrow.png')}
         style={styles.arrowImage}
+        contentFit="contain"
         accessible={false}
         importantForAccessibility="no"
       />
@@ -72,6 +75,7 @@ export default function WelcomeScreen() {
       <Image
         source={require('@/assets/images/Doki1.png')}
         style={styles.dokiImage}
+        contentFit="contain"
         accessible={true}
         accessibilityRole="image"
         accessibilityLabel="Mascote do Cuida Recife dando boas vindas"
@@ -91,7 +95,6 @@ const styles = StyleSheet.create({
   logo: {
     width: 200,
     height: 100,
-    resizeMode: 'contain',
     top: -150,
   },
   textContainer: {
@@ -115,7 +118,6 @@ const styles = StyleSheet.create({
     height: 120,
     marginBottom: 70,
     position: 'absolute',
-    resizeMode: 'contain',
   },
   buttonsContainer: {
     alignItems: 'center',
@@ -166,7 +168,6 @@ const styles = StyleSheet.create({
     marginBottom: -400,
     marginTop: 140,
     marginLeft: -200,
-    resizeMode: 'contain',
     position: 'absolute',
   },
 });

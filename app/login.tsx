@@ -1,18 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useAuth } from '../contexts/AuthContext';
 import { useUI } from '@/contexts/UIContext';
 
@@ -88,6 +78,7 @@ export default function LoginScreen() {
         <Image
           source={require('@/assets/images/cuidarecife.png')}
           style={styles.logo}
+          contentFit="contain"
           accessible={true}
           accessibilityRole="image"
           accessibilityLabel="Logomarca do Cuida Recife"
@@ -228,7 +219,6 @@ const styles = StyleSheet.create({
   logo: {
     width: 220,
     height: 80,
-    resizeMode: 'contain',
   },
   formContainer: {
     flex: 1,
