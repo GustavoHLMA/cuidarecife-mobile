@@ -19,6 +19,7 @@ import { api } from '@/services/api';
 import * as Speech from 'expo-speech';
 import FeedbackPopup from '@/components/FeedbackPopup';
 import { useFeatureFeedback } from '@/hooks/useFeatureFeedback';
+import { useUI } from '@/contexts/UIContext';
 
 interface Message {
   id: string;
@@ -41,6 +42,7 @@ export default function AjudaScreen() {
   const inputRef = useRef<TextInput>(null);
   const [activeMessageToRate, setActiveMessageToRate] = useState<Message | null>(null);
   const { showFeedback, incrementUsage, closeFeedback } = useFeatureFeedback("CHATBOT", 3);
+  const { showModal } = useUI();
 
   const roboImage = require('@/assets/images/robo.png');
 
@@ -92,7 +94,7 @@ export default function AjudaScreen() {
 
   // Botão de microfone: foca no input para ativar teclado de voz nativo
   const handleMicPress = () => {
-    Alert.alert(
+    showModal(
       'Entrada por Voz',
       'Para ditar sua mensagem:\n\n1. Toque no campo de texto\n2. No teclado, toque no ícone de microfone 🎤\n3. Fale sua mensagem\n\nO teclado do seu celular possui reconhecimento de voz nativo.',
       [{ text: 'Entendi', onPress: () => inputRef.current?.focus() }]
@@ -140,7 +142,7 @@ export default function AjudaScreen() {
 
     } catch (error: any) {
       console.error('[Chat] Erro:', error);
-      Alert.alert('Erro', error.message || 'Não foi possível obter uma resposta do assistente.');
+      showModal('Poxa...', error.message || 'O Doc Dida está com problemas para responder agora. Quer tentar mais tarde?');
     } finally {
       setIsLoading(false);
     }

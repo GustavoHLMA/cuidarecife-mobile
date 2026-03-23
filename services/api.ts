@@ -113,12 +113,12 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
-        return { error: data.error || 'Request failed' };
+        return { error: data.error || 'A requisição falhou' };
       }
 
       return { data };
     } catch (error) {
-      return { error: 'Network error. Please check your connection.' };
+      return { error: 'Erro de rede. Por favor, verifique sua conexão e tente novamente.' };
     }
   }
 

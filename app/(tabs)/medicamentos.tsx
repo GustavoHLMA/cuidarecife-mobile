@@ -8,8 +8,8 @@ import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import FeedbackPopup from '@/components/FeedbackPopup';
 import { useFeatureFeedback } from '@/hooks/useFeatureFeedback';
+import { useUI } from '@/contexts/UIContext';
 import { 
-  Alert, 
   Animated, 
   Platform, 
   StyleSheet, 
@@ -23,8 +23,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { 
   scheduleMedicationAlerts, 
-  cancelMedicationAlerts,
-  scheduleFollowupMeasurement 
+  scheduleFollowupMeasurement,
+  requestNotificationPermissions
 } from '@/hooks/useLocalNotifications';
 
 // Ícones
@@ -102,13 +102,14 @@ export default function MedicamentosScreen() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [processingDose, setProcessingDose] = useState<string | null>(null);
   const { showFeedback, incrementUsage, closeFeedback } = useFeatureFeedback("OCR", 3);
+  const { showModal, showToast } = useUI();
 
   const headerMaxHeight = 200;
   const profileImageOverflowHeight = 70;
   const initialContentPaddingTop = headerMaxHeight + profileImageOverflowHeight;
 
   const handleLogout = () => {
-    Alert.alert(
+    showModal(
       'Sair do aplicativo',
       'Tem certeza que deseja sair?',
       [
@@ -229,11 +230,12 @@ export default function MedicamentosScreen() {
   );
 
   useEffect(() => {
+    requestNotificationPermissions(showModal);
     (async () => {
       if (Platform.OS !== 'web') {
         const cameraStatus = await ImagePicker.requestCameraPermissionsAsync();
         if (cameraStatus.status !== 'granted') {
-          Alert.alert('Permissão necessária', 'Precisamos de acesso à câmera para verificar medicamentos.');
+          showModal('Dá uma licencinha?', 'Precisamos usar a câmera do seu celular para ler a sua receita.');
         }
       }
     })();
@@ -264,7 +266,7 @@ export default function MedicamentosScreen() {
       const result = await api.recordDose(realMedId, { scheduledTime });
 
       if (result.error) {
-        Alert.alert('Erro', result.error);
+        showModal('Ops!', result.error || 'Não conseguimos anotar que você tomou. Tente novamente.');
         return;
       }
 
@@ -277,7 +279,7 @@ export default function MedicamentosScreen() {
       await loadMedications();
       
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Não foi possível registrar a dose.');
+      showToast(error.message || 'Poxa, deu um errinho ao anotar. Tente de novo.', 'error');
     } finally {
       setProcessingDose(null);
     }
@@ -296,7 +298,7 @@ export default function MedicamentosScreen() {
       const result = await api.markForgotten(realMedId, { scheduledTime });
 
       if (result.error) {
-        Alert.alert('Erro', result.error);
+        showModal('Ops!', result.error || 'Não conseguimos marcar como esquecido. Tente novamente.');
         return;
       }
 
@@ -309,7 +311,7 @@ export default function MedicamentosScreen() {
       await loadMedications();
       
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Não foi possível marcar como esquecido.');
+      showToast(error.message || 'Deu um probleminha para marcar o esquecimento.', 'error');
     } finally {
       setProcessingDose(null);
     }
@@ -324,7 +326,7 @@ export default function MedicamentosScreen() {
     if (!permissionResult.granted) {
       const requestPermissionResult = await ImagePicker.requestCameraPermissionsAsync();
       if (!requestPermissionResult.granted) {
-        Alert.alert('Permissão Negada', 'Você precisa permitir o acesso à câmera.');
+        showModal('Câmera Bloqueada', 'Para ler a receita, precisamos que você libere o uso da câmera, tá bom?');
         return;
       }
     }
@@ -344,7 +346,7 @@ export default function MedicamentosScreen() {
 
   const processImageForOCR = async (uri: string, base64Data?: string | null) => {
     try {
-      Alert.alert('Processando...', 'Verificando se o medicamento corresponde à sua prescrição.');
+      showToast('Estou lendo a foto... Só um instante!', 'info');
       
       let base64 = base64Data;
       
@@ -368,7 +370,7 @@ export default function MedicamentosScreen() {
       const result = await api.analyzeImage(base64);
       
       if (result.error) {
-        Alert.alert('Erro', result.error);
+        showModal('Eita!', result.error || 'A foto ficou confusa. Pode tirar outra?');
         return;
       }
 
@@ -394,22 +396,22 @@ export default function MedicamentosScreen() {
         }
 
         if (foundMed) {
-          Alert.alert(
+          showModal(
             '✓ Medicamento Correto!',
             `O medicamento ${foundMed.name} corresponde à sua prescrição.`
           );
         } else {
-          Alert.alert(
-            '⚠️ Atenção',
-            'O medicamento fotografado não corresponde aos seus medicamentos pendentes. Verifique com cuidado.'
+          showModal(
+            '⚠️ Hmm, não parece certo',
+            'A foto não bate com o remédio que você tem que tomar agora. Dá uma conferida na caixinha, por favor!'
           );
         }
       } else {
         console.log('[OCR] Nenhum texto extraído da imagem');
-        Alert.alert('Não Reconhecido', 'Não foi possível identificar texto na imagem.');
+        showModal('Não consegui ler', 'As letrinhas ficaram embaçadas na foto. Vamos tentar tirar outra bem de pertinho?');
       }
     } catch (error: any) {
-      Alert.alert('Erro', error.message || 'Falha ao processar imagem.');
+      showToast(error.message || 'Poxa, a foto não carregou direito.', 'error');
     }
   };
 

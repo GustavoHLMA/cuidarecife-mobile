@@ -6,7 +6,6 @@ import * as Speech from 'expo-speech';
 import { useEffect, useRef, useState } from 'react';
 import { scheduleRefillAlert } from '@/hooks/useLocalNotifications';
 import {
-  Alert,
   Animated,
   Linking,
   ScrollView,
@@ -16,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useUI } from '@/contexts/UIContext';
 
 const Button = ({ title, onPress, imageSource }: { title: string, onPress: () => void, imageSource?: any }) => (
   <TouchableOpacity
@@ -32,6 +32,7 @@ export default function ExploreScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const router = useRouter();
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const { showModal } = useUI();
 
   // ... (handlers remain same, but avoiding re-definition of Button)
 
@@ -39,12 +40,12 @@ export default function ExploreScreen() {
     if (link) {
       Linking.openURL(link).catch((err) => console.error('Erro ao abrir link:', err));
     } else {
-      Alert.alert('Funcionalidade ainda não implementada.');
+      showModal('Logo logo chega!', 'Ainda estamos construindo essa parte do aplicativo para você.');
     }
   };
 
   const handleLogout = () => {
-    Alert.alert(
+    showModal(
       'Sair do aplicativo',
       'Tem certeza que deseja sair?',
       [
@@ -63,9 +64,9 @@ export default function ExploreScreen() {
 
   const handleMenuPress = (option: 'conta' | 'configuracoes') => {
     if (option === 'conta') {
-      Alert.alert('Conta', 'Tela de conta em desenvolvimento.');
+      showModal('Seus Dados', 'A tela com as suas informações ainda está sendo construída.');
     } else if (option === 'configuracoes') {
-      Alert.alert('Configurações', 'Tela de configurações em desenvolvimento.');
+      showModal('Ajustes', 'Essa telinha de configurações logo estará pronta!');
     }
   };
 
@@ -88,7 +89,7 @@ export default function ExploreScreen() {
       onError: (error: any) => {
         console.error('Erro ao reproduzir fala na tela Explore:', error);
         setIsSpeaking(false);
-        Alert.alert("Erro na Leitura", "Não foi possível ler o conteúdo da tela.");
+        showModal("Ops, fiquei em silêncio", "Não consegui ler essa tela em voz alta para você agora.");
       },
     });
   };

@@ -13,7 +13,8 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export const requestNotificationPermissions = async () => {
+export const requestNotificationPermissions = async (showModal?: any) => {
+  if (Platform.OS === 'web') return true;
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'default',
@@ -33,14 +34,25 @@ export const requestNotificationPermissions = async () => {
     }
     if (finalStatus !== 'granted') {
       console.log('Permissão para notificações não foi concedida!');
-      Alert.alert(
-        'Notificações Desativadas',
-        'Para receber lembretes dos seus medicamentos, você precisa permitir as notificações nas configurações do seu celular.',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Abrir Configurações', onPress: () => Linking.openSettings() }
-        ]
-      );
+      if (showModal) {
+        showModal(
+          'Notificações Desativadas',
+          'Para receber lembretes dos seus medicamentos, você precisa permitir as notificações nas configurações do seu celular.',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Abrir Configurações', onPress: () => Linking.openSettings() }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Notificações Desativadas',
+          'Para receber lembretes dos seus medicamentos, você precisa permitir as notificações nas configurações do seu celular.',
+          [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Abrir Configurações', onPress: () => Linking.openSettings() }
+          ]
+        );
+      }
       return false;
     }
     return true;

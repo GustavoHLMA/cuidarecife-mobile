@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Modal, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '@/services/api';
+import { useUI } from '@/contexts/UIContext';
 
 interface FeedbackPopupProps {
   visible: boolean;
@@ -14,6 +15,7 @@ interface FeedbackPopupProps {
 export default function FeedbackPopup({ visible, question, featureName, details, onClose }: FeedbackPopupProps) {
   const [rating, setRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showModal, showToast } = useUI();
 
   const handleSubmit = async () => {
     if (rating === 0) return;
@@ -22,12 +24,12 @@ export default function FeedbackPopup({ visible, question, featureName, details,
     try {
       const response = await api.submitMobileFeedback(featureName, rating, details);
       if (response.error) {
-        Alert.alert('Erro', response.error);
+        showModal('Poxa, deu erro', response.error);
         return;
       }
       onClose(); // Fechar com sucesso
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível enviar a avaliação.');
+      showToast('Não conseguimos receber sua nota agora. Obrigado por tentar!', 'error');
     } finally {
       setIsSubmitting(false);
       setRating(0); // reset state
