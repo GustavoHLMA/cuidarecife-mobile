@@ -18,7 +18,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: Colors[(colorScheme as 'light' | 'dark') ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
@@ -35,7 +35,7 @@ export default function TabLayout() {
         options={{
           title: 'MEDICAÇÃO',
           tabBarAccessibilityLabel: 'Aba de Medicação',
-          tabBarIcon: ({ color }) => <Image source={PilulaIcon} style={{ width: 28, height: 28, tintColor: color }} />,
+          tabBarIcon: ({ color }: { color: string }) => <Image source={PilulaIcon} style={{ width: 28, height: 28, tintColor: color }} />,
         }}
       />
       <Tabs.Screen
@@ -43,7 +43,7 @@ export default function TabLayout() {
         options={{
           title: 'SAÚDE',
           tabBarAccessibilityLabel: 'Aba de Saúde e Informações',
-          tabBarIcon: ({ color }) => <Image source={PlusIcon} style={{ width: 28, height: 28, tintColor: color }} />,
+          tabBarIcon: ({ color }: { color: string }) => <Image source={PlusIcon} style={{ width: 28, height: 28, tintColor: color }} />,
         }}
       />
       <Tabs.Screen
@@ -51,7 +51,7 @@ export default function TabLayout() {
         options={{
           title: 'CUIDADOS',
           tabBarAccessibilityLabel: 'Aba de Cuidados Pessoais',
-          tabBarIcon: ({ color }) => <Image source={CuidadoIcon} style={{ width: 28, height: 28, tintColor: color }} />,
+          tabBarIcon: ({ color }: { color: string }) => <Image source={CuidadoIcon} style={{ width: 28, height: 28, tintColor: color }} />,
         }}
       />
     
