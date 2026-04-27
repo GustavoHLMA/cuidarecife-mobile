@@ -9,9 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import { Markdown } from '@docren/react-native-markdown';
@@ -28,6 +27,7 @@ interface Message {
 }
 
 export default function AjudaScreen() {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'initial-ai-message',
@@ -154,7 +154,18 @@ export default function AjudaScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
     >
-      <Stack.Screen options={{ title: 'Ajuda - Chat Saúde' }} />
+      <Stack.Screen options={{ title: 'Ajuda - Chat Saúde', headerShown: false }} />
+      {/* Botão Voltar */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => router.back()}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar para a tela anterior"
+      >
+        <Ionicons name="arrow-back" size={28} color="#004894" />
+        <Text style={styles.backButtonText}>Voltar</Text>
+      </TouchableOpacity>
       <ScrollView
         ref={scrollViewRef}
         style={styles.messagesContainer}
@@ -294,6 +305,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F0F0F0',
     paddingTop: 50,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    zIndex: 20,
+  },
+  backButtonText: {
+    fontSize: 18,
+    color: '#004894',
+    fontWeight: '600',
+    marginLeft: 6,
   },
   messagesContainer: {
     flex: 1,

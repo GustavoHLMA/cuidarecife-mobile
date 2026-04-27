@@ -21,10 +21,9 @@ interface HeaderProps {
   scrollY: RNAnimated.Value;
   onReadPress?: () => void;
   onLogoutPress?: () => void;
-  onMenuPress?: (option: 'conta' | 'configuracoes') => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ scrollY, onReadPress, onLogoutPress, onMenuPress }) => {
+const Header: React.FC<HeaderProps> = ({ scrollY, onReadPress, onLogoutPress }) => {
   const { user } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const drawerAnim = useRef(new RNAnimated.Value(-DRAWER_WIDTH)).current;
@@ -82,12 +81,7 @@ const Header: React.FC<HeaderProps> = ({ scrollY, onReadPress, onLogoutPress, on
     });
   };
 
-  const handleMenuOption = (option: 'conta' | 'configuracoes') => {
-    closeDrawer();
-    if (onMenuPress) {
-      onMenuPress(option);
-    }
-  };
+
 
   const handleLogout = () => {
     closeDrawer();
@@ -147,15 +141,6 @@ const Header: React.FC<HeaderProps> = ({ scrollY, onReadPress, onLogoutPress, on
 
             {/* Menu Options */}
             <View style={styles.drawerMenu}>
-              <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuOption('conta')}>
-                <Ionicons name="person-outline" size={24} color="#004894" />
-                <Text style={styles.menuItemText}>Conta</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuOption('configuracoes')}>
-                <Ionicons name="settings-outline" size={24} color="#004894" />
-                <Text style={styles.menuItemText}>Configurações</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Logout Button */}

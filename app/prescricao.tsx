@@ -4,7 +4,6 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
 import { useCallback, useRef, useState } from 'react';
 import {
-  Alert,
   Animated,
   StyleSheet,
   Text,
@@ -348,8 +347,17 @@ export default function PrescricaoScreen() {
 
       if (result.data?.analysisResult) {
         Speech.stop();
-        Speech.speak(result.data.analysisResult, { language: 'pt-BR' });
-        showModal("Dica do Doc 👨‍⚕️", result.data.analysisResult);
+        // Limpar marcadores markdown (**,*,#,etc) que o leitor de tela lê como "asterisco"
+        const cleanText = result.data.analysisResult
+          .replace(/\*\*\*/g, '')  // bold+italic
+          .replace(/\*\*/g, '')    // bold
+          .replace(/\*/g, '')      // italic
+          .replace(/^#{1,6}\s/gm, '') // headings
+          .replace(/`/g, '')       // code
+          .replace(/~~/g, '')      // strikethrough
+          .trim();
+        Speech.speak(cleanText, { language: 'pt-BR' });
+        showModal("Dica do Doc 👨‍⚕️", cleanText);
       } else {
         console.error('[Verificação] Erro:', result.error);
         showModal("Desculpe", result.error || "O Doc não conseguiu ler essa receita agora.");
@@ -548,6 +556,17 @@ export default function PrescricaoScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Botão Voltar */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => router.back()}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar para a tela anterior"
+      >
+        <Ionicons name="arrow-back" size={28} color="#004894" />
+        <Text style={styles.backButtonText}>Voltar</Text>
+      </TouchableOpacity>
       <Header scrollY={scrollY} onReadPress={speakScreenContent} />
 
       <Animated.ScrollView
@@ -664,6 +683,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F2F5FA',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 4,
+    zIndex: 20,
+  },
+  backButtonText: {
+    fontSize: 18,
+    color: '#004894',
+    fontWeight: '600',
+    marginLeft: 6,
   },
   noticeText: {
     fontSize: 20,

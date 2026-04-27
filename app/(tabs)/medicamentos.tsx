@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import FeedbackPopup from '@/components/FeedbackPopup';
 import { useFeatureFeedback } from '@/hooks/useFeatureFeedback';
@@ -23,7 +25,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { 
   scheduleMedicationAlerts, 
-  scheduleFollowupMeasurement,
   requestNotificationPermissions
 } from '@/hooks/useLocalNotifications';
 
@@ -200,8 +201,14 @@ export default function MedicamentosScreen() {
           } as any);
         });
 
-        // Ordenar por horário
+        // Ordenar: pendentes primeiro, depois por horário
         displayMeds.sort((a, b) => {
+          // Pendentes primeiro, depois tomados/esquecidos
+          const statusOrder = { pending: 0, taken: 1, forgotten: 1 };
+          const statusDiff = statusOrder[a.status] - statusOrder[b.status];
+          if (statusDiff !== 0) return statusDiff;
+          
+          // Dentro do mesmo status, ordenar por horário
           const timeA = parseInt(a.time.replace(':', ''));
           const timeB = parseInt(b.time.replace(':', ''));
           return timeA - timeB;
@@ -468,6 +475,162 @@ export default function MedicamentosScreen() {
     });
   };
 
+  const needsMealIcon = (instruction: string | null) => {
+    if (!instruction) return false;
+    const lower = instruction.toLowerCase();
+    return lower.includes('alimentad') || lower.includes('refeição') || lower.includes('refeicao') || lower.includes('após comer') || lower.includes('antes de comer') || lower.includes('com comida') || lower.includes('junto com alimento') || lower.includes('alimentação');
+  };
+
+  const getPeriodEmoji = (time: string) => {
+    const hour = parseInt(time.split(':')[0]);
+    if (hour < 12) return '☀️';
+    if (hour < 17) return '🌤️';
+    return '🌙';
+  };
+
+  const getPeriodLabel = (time: string) => {
+    const hour = parseInt(time.split(':')[0]);
+    if (hour < 12) return 'Manhã';
+    if (hour < 17) return 'Tarde';
+    return 'Noite';
+  };
+
+  const printMedicationSchedule = async () => {
+    if (medicationsList.length === 0) {
+      showModal('Sem medicamentos', 'Adicione medicamentos primeiro para poder imprimir.');
+      return;
+    }
+
+    const today = new Date();
+    const dateStr = today.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    // Group by period
+    const periods = ['MANHÃ', 'TARDE', 'NOITE'];
+    let medsHtml = '';
+
+    periods.forEach(period => {
+      const periodMeds = medicationsList.filter(med => getTimeOfDay(med.time) === period);
+      if (periodMeds.length === 0) return;
+
+      const periodIcon = period === 'MANHÃ' ? '☀️' : period === 'TARDE' ? '🌤️' : '🌙';
+      const periodColor = period === 'MANHÃ' ? '#FF9800' : period === 'TARDE' ? '#2196F3' : '#3F51B5';
+
+      medsHtml += `
+        <div style="margin-bottom: 24px;">
+          <div style="display: flex; align-items: center; margin-bottom: 16px; padding: 12px 16px; background-color: ${periodColor}; border-radius: 12px;">
+            <span style="font-size: 40px; margin-right: 12px;">${periodIcon}</span>
+            <span style="font-size: 28px; font-weight: bold; color: #fff;">${period}</span>
+          </div>
+      `;
+
+      periodMeds.forEach(med => {
+        const mealIcon = needsMealIcon(med.instruction) 
+          ? '<div style="display: flex; align-items: center; margin-top: 8px; padding: 8px 12px; background-color: #FFF3E0; border-radius: 8px; border: 2px solid #FF9800;"><span style="font-size: 28px; margin-right: 8px;">🍽️</span><span style="font-size: 20px; color: #E65100; font-weight: bold;">Tomar com alimentação</span></div>'
+          : '';
+
+        medsHtml += `
+          <div style="background-color: #F5F7FA; border-left: 6px solid ${periodColor}; border-radius: 12px; padding: 16px 20px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 26px; font-weight: bold; color: #004894;">${med.name}</div>
+                ${med.dosage ? `<div style="font-size: 20px; color: #2196F3; font-weight: 600;">${med.dosage}</div>` : ''}
+              </div>
+              <div style="font-size: 28px; font-weight: bold; color: #074173;">⏰ ${med.time}</div>
+            </div>
+            ${med.instruction ? `<div style="font-size: 18px; color: #546E7A; margin-top: 8px; line-height: 1.4;">${med.instruction}</div>` : ''}
+            ${mealIcon}
+          </div>
+        `;
+      });
+
+      medsHtml += '</div>';
+    });
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          @page { margin: 20mm; }
+          body {
+            font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+            padding: 0;
+            margin: 0;
+            color: #333;
+          }
+          .header {
+            text-align: center;
+            padding: 24px;
+            background: linear-gradient(135deg, #004894, #2196F3);
+            border-radius: 16px;
+            margin-bottom: 24px;
+          }
+          .header h1 {
+            color: #fff;
+            font-size: 32px;
+            margin: 0 0 8px 0;
+          }
+          .header .subtitle {
+            color: #C4DEF9;
+            font-size: 18px;
+            margin: 0;
+          }
+          .patient-info {
+            text-align: center;
+            font-size: 22px;
+            color: #004894;
+            font-weight: bold;
+            margin-bottom: 24px;
+            padding: 12px;
+            background-color: #E3F2FD;
+            border-radius: 12px;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 32px;
+            padding: 16px;
+            border-top: 2px solid #E0E0E0;
+            font-size: 14px;
+            color: #999;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>💊 Meus Medicamentos do Dia</h1>
+          <p class="subtitle">Cuida Recife</p>
+        </div>
+        <div class="patient-info">
+          ${user?.name || 'Paciente'} — ${dateStr}
+        </div>
+        ${medsHtml}
+        <div class="footer">
+          Gerado pelo aplicativo Cuida Recife em ${today.toLocaleString('pt-BR')}
+        </div>
+      </body>
+      </html>
+    `;
+
+    try {
+      if (Platform.OS === 'web') {
+        // Na web, abrir em nova janela para impressão
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(html);
+          printWindow.document.close();
+          printWindow.print();
+        }
+      } else {
+        await Print.printAsync({ html });
+      }
+    } catch (error: any) {
+      console.error('[Print] Erro:', error);
+      showToast('Não foi possível imprimir agora. Tente novamente.', 'error');
+    }
+  };
+
   const renderMedicationCard = (medication: DisplayMedication) => {
     const isProcessing = processingDose === medication.id;
     
@@ -646,6 +809,18 @@ export default function MedicamentosScreen() {
               <ExpoImage source={cameraIcon} style={styles.newCameraIcon} contentFit="contain" />
               <Text style={styles.newCameraButtonText}>VEJA SE ESTÁ TOMANDO O CERTO</Text>
             </TouchableOpacity>
+            {hasPrescription && medicationsList.length > 0 ? (
+              <TouchableOpacity 
+                style={styles.printButton} 
+                onPress={printMedicationSchedule}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Imprimir horários dos medicamentos em PDF"
+              >
+                <Ionicons name="print-outline" size={28} color="#004894" />
+                <Text style={styles.printButtonText}>IMPRIMIR HORÁRIOS</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
 
           {isLoading ? (
@@ -758,6 +933,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     flexShrink: 1,
+  },
+  printButton: {
+    width: '90%',
+    maxWidth: 380,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#E3F2FD',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 15,
+    marginTop: 12,
+    borderWidth: 2,
+    borderColor: '#004894',
+  },
+  printButtonText: {
+    fontSize: 18,
+    color: '#004894',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginLeft: 10,
   },
   medicationSection: {
     paddingHorizontal: 20,

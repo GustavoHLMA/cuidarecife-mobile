@@ -83,6 +83,10 @@ export default function CuidadosScreen() {
     </View>
   );
 
+  const headerMaxHeight = 200;
+  const profileImageOverflowHeight = 70;
+  const initialContentPaddingTop = headerMaxHeight + profileImageOverflowHeight;
+
   return (
     <SafeAreaView style={styles.container}>
       <Header scrollY={scrollY} onReadPress={() => { }} onLogoutPress={handleLogout} />
@@ -93,8 +97,7 @@ export default function CuidadosScreen() {
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="always"
         ListHeaderComponent={
-          <View style={styles.searchSection}>
-            <View style={{ height: 300 }} />
+          <View style={[styles.searchSection, { paddingTop: initialContentPaddingTop }]}>
             <Text style={styles.searchTitle}>O QUE VOCÊ PROCURA?</Text>
             <View style={styles.searchInputWrapper}>
               <TextInput
@@ -125,8 +128,8 @@ export default function CuidadosScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  listContainer: { paddingBottom: 20, paddingHorizontal: 10, marginTop: -40 },
+  container: { flex: 1, backgroundColor: '#F2F6FA' },
+  listContainer: { paddingBottom: 20, paddingHorizontal: 10 },
   searchSection: { paddingHorizontal: 20, alignItems: 'center' },
   searchTitle: { fontSize: 28, fontWeight: 'bold', color: '#004894', marginBottom: 20 },
   searchInputWrapper: {

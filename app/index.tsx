@@ -11,9 +11,7 @@ export default function WelcomeScreen() {
     router.push('/login?mode=login');
   };
 
-  const handleCadastro = () => {
-    router.push('/login?mode=register');
-  };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -58,18 +56,6 @@ export default function WelcomeScreen() {
           </ThemedText>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.cadastroButton} 
-          onPress={handleCadastro}
-          accessible={true}
-          accessibilityRole="button"
-          accessibilityLabel="Cadastrar"
-          accessibilityHint="Toca duas vezes para ir para a tela de Criação de Conta"
-        >
-          <ThemedText type="title" style={styles.cadastroButtonText} importantForAccessibility="no">
-            CADASTRAR
-          </ThemedText>
-        </TouchableOpacity>
       </View>
 
       <Image
@@ -141,24 +127,6 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  cadastroButton: {
-    backgroundColor: '#82BDFB',
-    width: 220,
-    height: 55,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  cadastroButtonText: {
-    color: '#004894',
     fontSize: 20,
     fontWeight: '700',
   },

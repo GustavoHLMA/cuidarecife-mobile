@@ -3,8 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
+import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { scheduleRefillAlert } from '@/hooks/useLocalNotifications';
 import {
   Animated,
   Linking,
@@ -20,7 +20,10 @@ import { useUI } from '@/contexts/UIContext';
 const Button = ({ title, onPress, imageSource }: { title: string, onPress: () => void, imageSource?: any }) => (
   <TouchableOpacity
     style={styles.button}
-    onPress={onPress}
+    onPress={() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      onPress();
+    }}
   >
     {imageSource ? <Image source={imageSource} style={styles.buttonImage} contentFit="contain" /> : null}
     <Text style={styles.buttonText}>{title}</Text>
@@ -62,13 +65,7 @@ export default function ExploreScreen() {
     );
   };
 
-  const handleMenuPress = (option: 'conta' | 'configuracoes') => {
-    if (option === 'conta') {
-      showModal('Seus Dados', 'A tela com as suas informações ainda está sendo construída.');
-    } else if (option === 'configuracoes') {
-      showModal('Ajustes', 'Essa telinha de configurações logo estará pronta!');
-    }
-  };
+
 
   const speakExploreScreenContent = async () => {
     if (isSpeaking) {
@@ -77,9 +74,8 @@ export default function ExploreScreen() {
     }
 
     let contentToSpeak = "Tela Explorar. ";
-    contentToSpeak += "FALTAM 25 DIAS PARA SUA CONSULTA. "; 
     contentToSpeak += `Olá ${user?.name || 'usuário'}, o que deseja fazer hoje? `;
-    contentToSpeak += "Opções disponíveis: CADASTRO, PRESCRIÇÃO, GLICEMIA, PRESSÃO, AJUDA. ";
+    contentToSpeak += "Opções disponíveis: PRESCRIÇÃO, GLICEMIA, PRESSÃO, AJUDA. ";
 
     Speech.speak(contentToSpeak, {
       language: 'pt-BR',
@@ -95,15 +91,15 @@ export default function ExploreScreen() {
   };
 
   useEffect(() => {
-    // Apenas para demonstração do hook funcionando (Alerta de Fim de Estoque)
-    // Em um cenário real, isso seria verificado ao carregar as prescrições
-    scheduleRefillAlert('Losartana 50mg', 3);
-    
     return () => {
       Speech.stop();
       setIsSpeaking(false);
     };
   }, []);
+
+  const headerMaxHeight = 200;
+  const profileImageOverflowHeight = 70;
+  const initialContentPaddingTop = headerMaxHeight + profileImageOverflowHeight;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -111,35 +107,26 @@ export default function ExploreScreen() {
         scrollY={scrollY} 
         onReadPress={speakExploreScreenContent} 
         onLogoutPress={handleLogout}
-        onMenuPress={handleMenuPress}
       />
 
       <ScrollView
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[styles.contentContainer, { paddingTop: initialContentPaddingTop }]}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: false }
         )}
         scrollEventThrottle={16}
       >
-        <Text style={styles.countdownText}>FALTAM 25 DIAS</Text>
-        <Text style={styles.subText}>PARA SUA CONSULTA</Text>
-
-        <View style={styles.separator} />
-
         <Text style={styles.greetingText}>
           Olá {user?.name ? user.name : 'usuário'}, o que deseja fazer hoje?
         </Text>
 
         <View style={styles.buttonRow}>
-          <Button title="CADASTRO" onPress={() => handlePress()} imageSource={(require('@/assets/images/cadastro.png'))} />
           <Button title="PRESCRIÇÃO" onPress={() => router.push('/prescricao')} imageSource={(require('@/assets/images/presc.png'))} /> 
+          <Button title="PRESSÃO" onPress={() => router.push('/pressao')} imageSource={(require('@/assets/images/pressao.png'))}/> 
         </View>
         <View style={styles.buttonRow}>
-          <Button title="PRESSÃO" onPress={() => router.push('/pressao')} imageSource={(require('@/assets/images/pressao.png'))}/> 
           <Button title="GLICEMIA" onPress={() => router.push('/glicemia')} imageSource={(require('@/assets/images/glicemia.png'))}/> 
-        </View>
-        <View style={styles.singleButtonRow}>
           <Button title="ASSISTENTE" onPress={() => router.push('/ajuda')} imageSource={require('@/assets/images/robo.png')} />
         </View>
       </ScrollView>
@@ -150,36 +137,13 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F2F6FA',
   },
   contentContainer: {
     paddingHorizontal: 20,
     alignItems: 'center',
-    paddingTop: 100, // Afastando do Header para mostrar contagem
     flexGrow: 1,
-    paddingBottom: 100, // Garantindo que o scroll vai até o final
-  },
-  countdownText: {
-    fontSize: 40,
-    color: '#2196F3',
-    fontWeight: 'bold',
-    marginTop: 150, // Menos espaço acima
-    zIndex: 10,
-    textAlign: 'center',
-  },
-  subText: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: '#003164',
-    marginTop: 2,
-    textAlign: 'center',
-  },
-  separator: {
-    borderBottomColor: '#000000',
-    borderBottomWidth: 1,
-    opacity: 0.26,
-    width: '100%',
-    marginVertical: 30,
+    paddingBottom: 100,
   },
   greetingText: {
     fontSize: 26,
@@ -192,12 +156,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center', // Centraliza os botões
     gap: 20, // Espaço entre os botões
-    width: '100%',
-    marginBottom: 12,
-  },
-  singleButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'center', // Centraliza o botão de AJUDA
     width: '100%',
     marginBottom: 20,
   },

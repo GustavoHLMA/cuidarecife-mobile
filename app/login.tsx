@@ -1,27 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router } from 'expo-router';
+import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useAuth } from '../contexts/AuthContext';
 import { useUI } from '@/contexts/UIContext';
 
 export default function LoginScreen() {
-  const params = useLocalSearchParams<{ mode?: string }>();
-  const [isLogin, setIsLogin] = useState(params.mode !== 'register');
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [neighborhood, setNeighborhood] = useState('');
+
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const { showToast, showModal } = useUI();
 
-  useEffect(() => {
-    setIsLogin(params.mode !== 'register');
-  }, [params.mode]);
+
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
@@ -29,25 +24,13 @@ export default function LoginScreen() {
       return;
     }
 
-    if (!isLogin && !name.trim()) {
-      showToast('Como devemos te chamar? Por favor, digite seu nome.', 'error');
-      return;
-    }
 
-    if (!isLogin && !neighborhood.trim()) {
-      showToast('Pode me dizer o seu bairro? Assim achamos o posto mais perto de você.', 'error');
-      return;
-    }
 
     setIsLoading(true);
 
     try {
       let result;
-      if (isLogin) {
-        result = await login(email.trim(), password);
-      } else {
-        result = await register(name.trim(), email.trim(), password, neighborhood.trim());
-      }
+      result = await login(email.trim(), password);
 
       if (result.success) {
         router.replace('/(tabs)/medicamentos');
@@ -87,42 +70,10 @@ export default function LoginScreen() {
 
       <View style={styles.formContainer}>
         <Text style={styles.title} accessible={true} accessibilityRole="header">
-          {isLogin ? 'Entrar' : 'Criar Conta'}
+          Entrar
         </Text>
 
-        {!isLogin ? (
-          <View style={styles.inputContainer}>
-            <Ionicons name="person-outline" size={24} color="#004894" style={styles.inputIcon} accessible={false} importantForAccessibility="no" />
-            <TextInput
-              style={styles.input}
-              placeholder="Nome completo"
-              placeholderTextColor="#999"
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-              accessible={true}
-              accessibilityLabel="Campo de entrada para o seu Nome completo"
-              accessibilityHint="Digite o seu nome completo para o cadastro"
-            />
-          </View>
-        ) : null}
 
-        {!isLogin ? (
-          <View style={styles.inputContainer}>
-            <Ionicons name="location-outline" size={24} color="#004894" style={styles.inputIcon} accessible={false} importantForAccessibility="no" />
-            <TextInput
-              style={styles.input}
-              placeholder="Seu bairro (ex: Boa Viagem)"
-              placeholderTextColor="#999"
-              value={neighborhood}
-              onChangeText={setNeighborhood}
-              autoCapitalize="words"
-              accessible={true}
-              accessibilityLabel="Campo de entrada para o seu bairro"
-              accessibilityHint="Digite seu bairro para que possamos encontrar farmácias próximas baseadas nele."
-            />
-          </View>
-        ) : null}
 
         <View style={styles.inputContainer}>
           <Ionicons name="mail-outline" size={24} color="#004894" style={styles.inputIcon} accessible={false} importantForAccessibility="no" />
@@ -175,32 +126,20 @@ export default function LoginScreen() {
           disabled={isLoading}
           accessible={true}
           accessibilityRole="button"
-          accessibilityLabel={isLogin ? 'Entrar na conta' : 'Criar nova conta'}
-          accessibilityHint={isLogin ? 'Toca duas vezes para acessar o aplicativo.' : 'Toca duas vezes para registrar a sua nova conta.'}
+          accessibilityLabel={'Entrar na conta'}
+          accessibilityHint={'Toca duas vezes para acessar o aplicativo.'}
           accessibilityState={{ disabled: isLoading }}
         >
           {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.buttonText}>
-              {isLogin ? 'Entrar' : 'Criar conta'}
+              Entrar
             </Text>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.switchButton}
-          onPress={() => setIsLogin(!isLogin)}
-          accessible={true}
-          accessibilityRole="button"
-          accessibilityLabel={isLogin ? 'Não tem uma conta? Botão para ir para a tela de Cadastro' : 'Já tem uma conta? Botão para Voltar ao Entrar'}
-        >
-          <Text style={styles.switchText} importantForAccessibility="no">
-            {isLogin
-              ? 'Não tem uma conta? Cadastre-se'
-              : 'Já tem uma conta? Entrar'}
-          </Text>
-        </TouchableOpacity>
+
       </View>
     </KeyboardAvoidingView>
   );
@@ -272,13 +211,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  switchButton: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  switchText: {
-    color: '#004894',
-    fontSize: 16,
   },
 });

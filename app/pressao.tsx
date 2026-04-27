@@ -63,6 +63,17 @@ export default function PressaoScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Botão Voltar */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => router.back()}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar para a tela anterior"
+      >
+        <Ionicons name="arrow-back" size={28} color="#004894" />
+        <Text style={styles.backButtonText}>Voltar</Text>
+      </TouchableOpacity>
       <Header scrollY={scrollY} onReadPress={() => {}} />
 
       <Animated.ScrollView
@@ -152,6 +163,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 4,
+    zIndex: 20,
+  },
+  backButtonText: {
+    fontSize: 18,
+    color: '#004894',
+    fontWeight: '600',
+    marginLeft: 6,
   },
   scrollContent: {
     paddingTop: 280,
