@@ -4,7 +4,7 @@ import { api } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { compressBase64Image } from '@/utils/imageCompress';
+import { compressImageToPurifiedBase64 } from '@/utils/imageCompress';
 import * as Speech from 'expo-speech';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -343,42 +343,22 @@ export default function MedicamentosScreen() {
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.7,
-      base64: true,
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const asset = result.assets[0];
-      await processImageForOCR(asset.uri, asset.base64);
+      await processImageForOCR(asset.uri);
     }
   };
 
-  const processImageForOCR = async (uri: string, base64Data?: string | null) => {
+  const processImageForOCR = async (uri: string) => {
     try {
       showToast('Estou lendo a foto... Só um instante!', 'info');
       
-      let base64 = base64Data;
-      
-      if (!base64) {
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            if (typeof reader.result === 'string') {
-              resolve(reader.result.split(',')[1]);
-            } else {
-              reject(new Error('Falha ao converter imagem'));
-            }
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      }
+      // Comprime a imagem DIRETAMENTE do URI (muito mais eficiente no iPhone)
+      const compressedBase64 = await compressImageToPurifiedBase64(uri);
 
-      // Comprimir imagem antes de enviar (reduz ~10MB → ~300KB)
-      base64 = await compressBase64Image(base64);
-
-      const result = await api.analyzeImage(base64);
+      const result = await api.analyzeImage(compressedBase64);
       
       if (result.error) {
         showModal('Eita!', result.error || 'A foto ficou confusa. Pode tirar outra?');

@@ -3,8 +3,8 @@
 const API_ENV = process.env.EXPO_PUBLIC_API_ENV || 'production';
 
 const API_URLS = {
-  development: process.env.EXPO_PUBLIC_API_URL_DEV || 'http://10.0.2.2:3001', // Android emulator localhost
-  production: process.env.EXPO_PUBLIC_API_URL_PROD || 'https://cuidarecife-api.onrender.com',
+  development: process.env.EXPO_PUBLIC_API_URL_DEV || 'http://146.190.73.65:3001', 
+  production: process.env.EXPO_PUBLIC_API_URL_PROD || 'https://api.cuidarecife.com.br',
 };
 
 const API_BASE_URL = API_URLS[API_ENV as keyof typeof API_URLS] || API_URLS.production;

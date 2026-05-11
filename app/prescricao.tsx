@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { compressBase64Image } from '@/utils/imageCompress';
+import { compressImageToPurifiedBase64 } from '@/utils/imageCompress';
 import * as Speech from 'expo-speech';
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -134,23 +134,9 @@ export default function PrescricaoScreen() {
     setIsExtracting(true);
     
     try {
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === 'string') {
-            resolve(reader.result.split(',')[1]);
-          } else {
-            reject(new Error('Falha ao converter imagem'));
-          }
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-
-      // Comprimir imagem antes de enviar (reduz ~10MB → ~300KB)
-      const compressedBase64 = await compressBase64Image(base64);
+      // Comprime imagem antes de enviar (reduz ~10MB → ~300KB)
+      // No iPhone, isso é feito nativamente via URI para não estourar a memória
+      const compressedBase64 = await compressImageToPurifiedBase64(uri);
 
       const result = await api.extractMedicationsFromImage(compressedBase64);
 
