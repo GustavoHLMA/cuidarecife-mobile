@@ -4,7 +4,7 @@
 
 # Cuida Recife Mobile
 
-**Cuida Recife** é um aplicativo de **monitoramento contínuo** e **apoio ao autocuidado** para pacientes com **hipertensão** e **diabetes**, focando na **adesão ao tratamento** e fornecendo **funcionalidades de acessibilidade** e **assistência via IA**. O app ajuda pacientes a **gerenciar sua medicação**, acompanhar a **pressão arterial** e **glicemia**, além de oferecer **educação em saúde** e alertas para **interações medicamentosas**
+**Cuida Recife** é um aplicativo de **monitoramento contínuo** e **apoio ao autocuidado** para pacientes com **hipertensão** e **diabetes**, focando na **adesão ao tratamento** e fornecendo **funcionalidades de acessibilidade** e **assistência via IA**. O app ajuda pacientes a **gerenciar sua medicação**, acompanhar a **pressão arterial** e **glicemia**, além de oferecer **educação em saúde** e alertas para **interações medicamentosas.**
 
 ## O Desafio 🚀
 
