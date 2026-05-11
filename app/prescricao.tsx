@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { compressBase64Image } from '@/utils/imageCompress';
 import * as Speech from 'expo-speech';
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -148,7 +149,10 @@ export default function PrescricaoScreen() {
         reader.readAsDataURL(blob);
       });
 
-      const result = await api.extractMedicationsFromImage(base64);
+      // Comprimir imagem antes de enviar (reduz ~10MB → ~300KB)
+      const compressedBase64 = await compressBase64Image(base64);
+
+      const result = await api.extractMedicationsFromImage(compressedBase64);
 
       if (result.error) {
         showModal('Poxa, o Doc ficou confuso', result.error || 'A foto ficou difícil de ler. Pode tentar mandar outra imagem?');

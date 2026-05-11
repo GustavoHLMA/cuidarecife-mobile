@@ -110,6 +110,11 @@ class ApiService {
         }
       }
 
+      // Se o tamanho da imagem bater no limite do Nginx/Servidor
+      if (response.status === 413) {
+        return { error: 'A foto enviada é muito pesada para o Doc ler. Tente enviar uma imagem mais leve.' };
+      }
+
       const data = await response.json();
 
       if (!response.ok) {

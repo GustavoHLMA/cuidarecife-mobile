@@ -1,5 +1,6 @@
 import Header from '@/components/Header';
 import { useAuth } from '@/contexts/AuthContext';
+import { api as apiService } from '@/services/api';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
@@ -60,6 +61,36 @@ export default function ExploreScreen() {
             await logout();
             router.replace('/');
           }
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    showModal(
+      'Excluir minha conta',
+      'Tem certeza? Todos os seus dados serão apagados permanentemente (medições, prescrições, medicamentos). Essa ação não pode ser desfeita.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir conta',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const result = await apiService.request('/auth/delete-account', {
+                method: 'DELETE',
+              });
+              if (result.error) {
+                showModal('Erro', result.error);
+                return;
+              }
+              await logout();
+              router.replace('/');
+              showModal('Conta excluída', 'Sua conta e todos os seus dados foram removidos com sucesso.');
+            } catch {
+              showModal('Erro', 'Não foi possível excluir sua conta. Tente novamente.');
+            }
+          },
         },
       ]
     );
@@ -129,6 +160,10 @@ export default function ExploreScreen() {
           <Button title="GLICEMIA" onPress={() => router.push('/glicemia')} imageSource={(require('@/assets/images/glicemia.png'))}/> 
           <Button title="ASSISTENTE" onPress={() => router.push('/ajuda')} imageSource={require('@/assets/images/robo.png')} />
         </View>
+
+        <TouchableOpacity onPress={handleDeleteAccount} style={styles.deleteAccountButton}>
+          <Text style={styles.deleteAccountText}>Excluir minha conta</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -184,5 +219,15 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     marginBottom: 8,
+  },
+  deleteAccountButton: {
+    marginTop: 20,
+    paddingVertical: 12,
+    alignItems: 'center' as const,
+  },
+  deleteAccountText: {
+    color: '#DC2626',
+    fontSize: 14,
+    textDecorationLine: 'underline' as const,
   },
 });

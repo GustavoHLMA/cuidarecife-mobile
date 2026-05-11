@@ -4,6 +4,7 @@ import { api } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { compressBase64Image } from '@/utils/imageCompress';
 import * as Speech from 'expo-speech';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -373,6 +374,9 @@ export default function MedicamentosScreen() {
           reader.readAsDataURL(blob);
         });
       }
+
+      // Comprimir imagem antes de enviar (reduz ~10MB → ~300KB)
+      base64 = await compressBase64Image(base64);
 
       const result = await api.analyzeImage(base64);
       
