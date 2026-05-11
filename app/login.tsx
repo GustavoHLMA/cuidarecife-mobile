@@ -139,7 +139,18 @@ export default function LoginScreen() {
           )}
         </TouchableOpacity>
 
-
+        <TouchableOpacity 
+          style={styles.registerLink} 
+          onPress={() => router.push('/cadastro')}
+          disabled={isLoading}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Não tem uma conta? Cadastre-se aqui"
+        >
+          <Text style={styles.registerText}>
+            Não tem uma conta? <Text style={styles.registerTextBold}>Cadastre-se</Text>
+          </Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -208,8 +219,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#9CB8D8',
   },
   buttonText: {
-    color: '#fff',
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  registerLink: {
+    marginTop: 25,
+    alignItems: 'center',
+  },
+  registerText: {
+    color: '#666',
+    fontSize: 16,
+  },
+  registerTextBold: {
+    color: '#004894',
     fontWeight: 'bold',
   },
 });

@@ -56,6 +56,18 @@ export default function WelcomeScreen() {
           </ThemedText>
         </TouchableOpacity>
 
+        <TouchableOpacity 
+          style={styles.registerButton} 
+          onPress={() => router.push('/cadastro')}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Cadastrar"
+          accessibilityHint="Toca duas vezes para criar uma nova conta"
+        >
+          <ThemedText type="title" style={styles.registerButtonText} importantForAccessibility="no">
+            CADASTRAR
+          </ThemedText>
+        </TouchableOpacity>
       </View>
 
       <Image
@@ -127,6 +139,26 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  registerButton: {
+    backgroundColor: '#fff',
+    width: 220,
+    height: 55,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#004894',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  registerButtonText: {
+    color: '#004894',
     fontSize: 20,
     fontWeight: '700',
   },

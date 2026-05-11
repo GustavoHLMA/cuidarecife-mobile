@@ -49,6 +49,7 @@ export default Sentry.wrap(function RootLayout() {
           <Stack initialRouteName="login">
             <Stack.Screen name="login" options={{ headerShown: false }} />
             <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="cadastro" options={{ headerShown: false }} />
             <Stack.Screen name="glicemia" options={{ headerShown: false }} />
             <Stack.Screen name="pressao" options={{ headerShown: false }} />
             <Stack.Screen name="prescricao" options={{ headerShown: false }} />
