@@ -60,6 +60,7 @@ export default Sentry.wrap(function RootLayout() {
             <Stack.Screen name="farmacias" options={{ headerShown: false }} />
             <Stack.Screen name="dicasglicemia" options={{ headerShown: false }} />
             <Stack.Screen name="ajuda" options={{ headerShown: false }} />
+            <Stack.Screen name="conteudo" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="+not-found" />
           </Stack>

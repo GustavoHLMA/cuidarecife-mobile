@@ -221,6 +221,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   registerLink: {
     marginTop: 25,
