@@ -330,24 +330,52 @@ export default function MedicamentosScreen() {
   };
 
   const handleCameraPress = async () => {
-    const permissionResult = await ImagePicker.getCameraPermissionsAsync();
-    if (!permissionResult.granted) {
-      const requestPermissionResult = await ImagePicker.requestCameraPermissionsAsync();
-      if (!requestPermissionResult.granted) {
-        showModal('Câmera Bloqueada', 'Para ler a receita, precisamos que você libere o uso da câmera, tá bom?');
-        return;
+    showModal(
+      'Verificar Medicamento',
+      'De onde você quer pegar a foto do medicamento?',
+      [
+        { text: 'Tirar Foto', onPress: () => pickImage('camera') },
+        { text: 'Escolher da Galeria', onPress: () => pickImage('gallery') },
+        { text: 'Voltar', style: 'cancel' },
+      ]
+    );
+  };
+
+  const pickImage = async (source: 'camera' | 'gallery') => {
+    try {
+      let result;
+
+      if (source === 'camera') {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          showModal('Câmera Bloqueada', 'Para tirar a foto, precisamos que você libere o uso da câmera.');
+          return;
+        }
+        result = await ImagePicker.launchCameraAsync({
+          allowsEditing: true,
+          aspect: [16, 9],
+          quality: 0.7,
+        });
+      } else {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          showModal('Galeria Bloqueada', 'Para buscar a foto, precisamos que você libere o acesso da galeria do seu celular.');
+          return;
+        }
+        result = await ImagePicker.launchImageLibraryAsync({
+          allowsEditing: true,
+          aspect: [16, 9],
+          quality: 0.7,
+        });
       }
-    }
 
-    let result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.7,
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const asset = result.assets[0];
-      await processImageForOCR(asset.uri);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        await processImageForOCR(asset.uri);
+      }
+    } catch (error) {
+      console.error('Erro ao selecionar imagem:', error);
+      showToast('A foto do medicamento não carregou direito. Pode tentar de novo?', 'error');
     }
   };
 
